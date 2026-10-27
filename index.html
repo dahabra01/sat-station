@@ -21,6 +21,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://sat.dahabra.com/og-image.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://dahabra.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 <title>Capt Abu Zaid Sat Station</title>
@@ -159,6 +160,8 @@ section{padding-block:84px;border-bottom:1px solid var(--rule)}
 .mail .copy:hover{border-color:var(--sand)}
 footer{padding-block:40px 56px;color:var(--mist);font-size:14px}
 footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+footer .visits{margin-top:14px;font-size:13px}
+footer .visits b{font:600 15px var(--f-mono);color:var(--signal);font-variant-numeric:tabular-nums}
 
 /* ---- live globe (scoped) ---- */
 #globe-sec{--space:var(--night);--panel:var(--deep);--panel-2:var(--band);--line:var(--rule);--ink:var(--cloud);--ink-dim:var(--mist);--accent:var(--signal)}
@@ -580,6 +583,10 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
     <span>Capt Abu Zaid Sat Station · Dubai</span>
     <span>Orbit maths: satellite.js · Orbit data: CelesTrak / N2YO</span>
   </div>
+  <div class="inner visits">
+    <span id="visits" hidden><b id="visitCount">0</b> visits so far · <a href="https://dahabra.goatcounter.com" target="_blank" rel="noopener">see where visitors come from</a></span>
+    <span>Visits are counted anonymously with GoatCounter: no cookies, no personal data.</span>
+  </div>
 </footer>
 
 <script>
@@ -593,6 +600,15 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
     var pick=function(){ var r=document.createRange(); r.selectNodeContents(t); var s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent="Selected, press copy"; };
     try{ navigator.clipboard.writeText(addr).then(done, pick); }catch(e){ pick(); }
   });
+})();
+</script>
+<script>
+/* live visit total from GoatCounter (only works on sat.dahabra.com; stays hidden elsewhere) */
+(function(){
+  if(!/dahabra\.com$/.test(location.hostname)) return;
+  fetch("https://dahabra.goatcounter.com/counter/TOTAL.json").then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(j){ if(!j || j.count==null) return; document.getElementById("visitCount").textContent=j.count; document.getElementById("visits").hidden=false; })
+    .catch(function(){});
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
