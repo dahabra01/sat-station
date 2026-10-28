@@ -45,6 +45,11 @@ THUMB_W = 480                       # archive card picture width
 JPEG_Q = 76
 MAX_BYTES = 900 * 1024 * 1024       # keep the captures folder under ~900 MB; oldest days go first
 DEPLOY_KEY = os.path.expanduser("~/.ssh/sat_site_deploy")
+WATERMARK = "\u00a9 Capt. Abu Zaid Sat Station \u00b7 sat.dahabra.com"
+MARK_VERSION = 1                    # bump to re-stamp every posted pass with a new watermark
+FONTS = ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+         "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"]
 DUBAI = dt.timezone(dt.timedelta(hours=4))
 
 ARGS = set(sys.argv[1:])
@@ -188,6 +193,25 @@ def pass_geometry(start):
 
 
 # ---------------------------------------------------------------- pictures
+def stamp(im):
+    """Write the watermark along the bottom of the picture, white with a dark outline."""
+    from PIL import ImageDraw, ImageFont
+    size = max(11, round(im.width * 0.027))
+    font = None
+    for f in FONTS:
+        if os.path.exists(f):
+            font = ImageFont.truetype(f, size)
+            break
+    if font is None:
+        font = ImageFont.load_default()
+    d = ImageDraw.Draw(im)
+    box = d.textbbox((0, 0), WATERMARK, font=font, stroke_width=2)
+    w, h = box[2] - box[0], box[3] - box[1]
+    x, y = (im.width - w) // 2, im.height - h - max(8, round(im.height * 0.012))
+    d.text((x, y), WATERMARK, font=font, fill=(255, 255, 255), stroke_width=2, stroke_fill=(0, 0, 0))
+    return im
+
+
 def shrink(src, dst, width):
     if DRY:
         return
@@ -196,10 +220,18 @@ def shrink(src, dst, width):
         im = Image.open(src).convert("RGB")
         if im.width > width:
             im = im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
+        stamp(im)
         im.save(dst, "JPEG", quality=JPEG_Q, optimize=True, progressive=True)
     except ImportError:
-        subprocess.run(["convert", src, "-resize", f"{width}x>", "-strip",
-                        "-quality", str(JPEG_Q), "-interlace", "Plane", dst], check=True)
+        size = str(max(11, round(width * 0.027)))
+        font = next((f for f in FONTS if os.path.exists(f)), None)
+        cmd = ["convert", src, "-resize", f"{width}x>", "-strip", "-gravity", "South", "-pointsize", size]
+        if font:
+            cmd += ["-font", font]
+        cmd += ["-stroke", "black", "-strokewidth", "4", "-fill", "black", "-annotate", "+0+10", WATERMARK,
+                "-stroke", "none", "-fill", "white", "-annotate", "+0+10", WATERMARK,
+                "-quality", str(JPEG_Q), "-interlace", "Plane", dst]
+        subprocess.run(cmd, check=True)
 
 
 KIND_ORDER = ["221", "224", "thermal", "67", "rain_221", "rain_224", "rain_67"]
@@ -245,6 +277,7 @@ def build_entry(p, stats, geo):
         "thumb": thumb,
         "polar": polar,
         "images": images,
+        "mark": MARK_VERSION,
     }
     entry.update(stats)
     entry.update(geo)
@@ -306,15 +339,16 @@ def main():
     changed = []
     for day, (score, p, stats) in sorted(best.items()):
         old = by_day.get(day)
-        if old and old["id"] == p["id"]:
+        restamp = bool(old) and old["id"] == p["id"] and old.get("mark") != MARK_VERSION
+        if old and old["id"] == p["id"] and not restamp:
             continue
-        if old and (old.get("lock_s", 0), old.get("peak_snr", 0)) >= score:
+        if old and not restamp and (old.get("lock_s", 0), old.get("peak_snr", 0)) >= score:
             continue
-        if old and not DRY:
+        if old and not restamp and not DRY:
             shutil.rmtree(os.path.join(SITE, OUT_DIR, old["id"]), ignore_errors=True)
         say(f"{'would post' if DRY else 'posting'} {p['id']} for {day}: "
             f"locked {stats['lock_s']} s, peak {stats['peak_snr']} dB"
-            + (f" (replaces {old['id']})" if old else ""))
+            + (" (adding watermark)" if restamp else f" (replaces {old['id']})" if old else ""))
         by_day[day] = build_entry(p, stats, pass_geometry(p["start"]))
         changed.append(p["id"])
 
