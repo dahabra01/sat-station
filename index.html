@@ -777,7 +777,7 @@ function drawDome(p){
   if(p){
     const pts = p.pts.map(q=>polar(q.az,q.el).map(v=>v.toFixed(1)).join(",")).join(" ");
     s += `<polyline points="${pts}" fill="none" stroke="${p.sat.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
-    const a=polar(p.pts[0].az,p.pts[0].el), z=polar(p.pts.at(-1).az,p.pts.at(-1).el), m=polar(p.maxAz,p.max);
+    const a=polar(p.pts[0].az,p.pts[0].el), z=polar(p.pts[p.pts.length-1].az,p.pts[p.pts.length-1].el), m=polar(p.maxAz,p.max);
     s += `<circle cx="${a[0]}" cy="${a[1]}" r="5" fill="#06101c" stroke="${p.sat.color}" stroke-width="2"/>`;
     s += `<circle cx="${z[0]}" cy="${z[1]}" r="5" fill="${p.sat.color}"/>`;
     s += `<circle cx="${m[0]}" cy="${m[1]}" r="4" fill="#eef3f8"/><text x="${m[0]+8}" y="${m[1]-6}" fill="#eef3f8" font-family="JetBrains Mono, monospace" font-size="11">${p.max.toFixed(0)}°</text>`;
@@ -802,7 +802,7 @@ function renderList(){
     b.innerHTML = `<span class="sw" style="background:${p.sat.color}"></span>
       <span class="when">${fmtDay.format(new Date(p.start))} → ${fmtHM.format(new Date(p.end))}${live}</span>
       <span class="el">${p.max.toFixed(0)}°</span>
-      <span class="who">${p.sat.label} · ${comp(p.pts[0].az)} → ${comp(p.pts.at(-1).az)} &nbsp;<span class="chip ${p.rating}">${label}</span></span>`;
+      <span class="who">${p.sat.label} · ${comp(p.pts[0].az)} → ${comp(p.pts[p.pts.length-1].az)} &nbsp;<span class="chip ${p.rating}">${label}</span></span>`;
     b.onclick=()=>{ selected=p; renderList(); };
     listEl.appendChild(b);
   });
@@ -828,9 +828,9 @@ function tick(){
   document.getElementById("nextMax").textContent = `${p.max.toFixed(0)}° · ${comp(p.maxAz)}`;
 }
 
-function refresh(){ passes = findPasses(new Date(), 48); renderList(); tick(); }
+function refresh(){ try{ passes = findPasses(new Date(), 48); renderList(); tick(); }catch(e){ console.error(e); } }
 refresh();
-setInterval(tick, 1000);
+setInterval(function(){ try{ tick(); }catch(e){} }, 1000);
 setInterval(refresh, 5*60e3);
 
 /* ---------- hero sky animation ---------- */
@@ -852,7 +852,7 @@ function size(){
       sp:400+Math.random()*1400, big, flare:Math.random()*9000, c:tints[Math.floor(Math.random()*tints.length)]};
   });
 }
-new ResizeObserver(size).observe(cv);
+if(window.ResizeObserver) new ResizeObserver(size).observe(cv); else window.addEventListener('resize', size);
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(size);
 function frame(t){
   cx.clearRect(0,0,w,h);
@@ -1039,7 +1039,7 @@ function resize(){
   baseR = Math.min(W, H) * 0.30;
   draw();
 }
-new ResizeObserver(resize).observe(stage);
+if(window.ResizeObserver) new ResizeObserver(resize).observe(stage); else { window.addEventListener('resize', resize); setTimeout(resize, 0); }
 
 /* point on (or above) the globe -> screen, with "can we see it" flag */
 function toScreen(lon, lat, s){
