@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Captures · Capt. Abu Zaid Sat Station</title>
+<meta name="description" content="Weather pictures caught live from Russian Meteor satellites by a home-built ground station in Dubai, with a signal report for every pass.">
+<meta name="theme-color" content="#06101c">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Capt. Abu Zaid Sat Station">
+<meta property="og:title" content="Captures from 820 km up">
+<meta property="og:description" content="Weather pictures caught straight from orbit by a wire antenna and a Raspberry Pi in Dubai.">
+<meta property="og:url" content="https://sat.dahabra.com/captures.html">
+<meta property="og:image" content="https://sat.dahabra.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script data-goatcounter="https://dahabra.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<!--PREVIEW-START-->
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: same single-dark identity as the home page. Slim bar home, the latest catch as a light table (picture left, pass report right), then the archive grid. */
+:root{
+  --night:#06101c;--deep:#0b1a2c;--band:#0e2136;--rule:#1f3a57;
+  --cloud:#eef3f8;--mist:#9db0c6;--sand:#e8b45c;--signal:#5ee1e6;--ok:#6fdc9c;--warn:#f0a35a;--track:#3a5a7c;--off:#14283f;
+  --f-display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gutter-l:max(16px,env(safe-area-inset-left,0px));
+  --gutter-r:max(16px,env(safe-area-inset-right,0px));
+  color-scheme:dark;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{background:var(--night);color:var(--cloud)}
+body{margin:0;font-family:var(--f-body);font-size:17px;line-height:1.6}
+img{max-width:100%}[hidden]{display:none!important}
+a{color:var(--signal)}
+.inner{max-width:1160px;margin:0 auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
+.eyebrow{font:600 12px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--sand)}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:.95;margin:0;letter-spacing:.01em;text-wrap:balance;text-transform:uppercase}
+p{margin:0;max-width:62ch}
+.lede{color:var(--mist);font-size:19px}
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+
+.bar{border-bottom:1px solid var(--rule)}
+.bar .inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px;flex-wrap:wrap}
+.home{display:flex;align-items:center;gap:10px;color:var(--cloud);text-decoration:none;font:800 20px var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.home svg{width:34px;height:34px;flex:none}
+.tabs{display:flex;gap:4px}
+.tabs a{font:600 12px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mist);text-decoration:none;padding:7px 11px;border-radius:8px;border:1px solid transparent}
+.tabs a:hover{color:var(--cloud)}
+.tabs a[aria-current]{color:var(--cloud);border-color:var(--rule);background:var(--deep)}
+
+.top{padding-block:52px 36px;border-bottom:1px solid var(--rule)}
+.top .inner{display:flex;flex-direction:column;gap:16px}
+.top h1{font-size:clamp(56px,11vw,128px);font-weight:900;line-height:.85}
+.top h1 span{color:var(--sand);display:block}
+
+section{padding-block:52px;border-bottom:1px solid var(--rule)}
+.head{display:flex;flex-direction:column;gap:12px;margin-bottom:26px}
+.head h2{font-size:clamp(36px,5.5vw,60px)}
+
+.table{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:32px;align-items:start}
+@media (max-width:900px){.table{grid-template-columns:1fr}}
+.viewer{display:flex;flex-direction:column;gap:12px;min-width:0}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:600 12.5px var(--f-mono);letter-spacing:.04em;color:var(--mist);background:var(--deep);border:1px solid var(--rule);border-radius:99px;padding:6px 12px;cursor:pointer}
+.seg button:hover{border-color:var(--mist);color:var(--cloud)}
+.seg button[aria-pressed="true"]{color:var(--night);background:var(--sand);border-color:var(--sand)}
+.seg.small button[aria-pressed="true"]{color:var(--signal);background:var(--band);border-color:var(--signal)}
+.frame{position:relative;display:block;width:100%;padding:0;background:#000;border:1px solid var(--rule);border-radius:14px;overflow:hidden;cursor:zoom-in;height:min(78vh,760px);max-width:100%}
+.frame img{display:block;width:100%;height:100%;object-fit:contain}
+.zoom{position:absolute;right:10px;bottom:10px;font:600 11px var(--f-mono);letter-spacing:.1em;color:var(--cloud);background:rgba(6,16,28,.82);border:1px solid var(--rule);padding:5px 9px;border-radius:6px}
+.explain{color:var(--mist);font-size:15.5px;border-left:3px solid var(--sand);padding:2px 0 2px 14px;min-height:3.2em}
+.explain b{color:var(--cloud)}
+
+.report{background:var(--deep);border:1px solid var(--rule);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.report h3{font-size:34px}
+.when{font:600 15px var(--f-mono);color:var(--mist);font-variant-numeric:tabular-nums}
+.verdict{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{font:600 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:99px;border:1px solid currentColor;width:fit-content}
+.chip.good{color:var(--ok)}.chip.part{color:var(--warn)}.chip.bad{color:var(--mist)}
+.specs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.spec{background:var(--band);padding:11px 13px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.spec small{font:600 10.5px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
+.spec b{font:600 19px var(--f-mono);font-variant-numeric:tabular-nums}
+.spec b.hi{color:var(--signal)}
+.sub{font:600 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mist);margin-bottom:8px}
+.tl{display:flex;height:22px;border-radius:6px;overflow:hidden;border:1px solid var(--rule)}
+.tl i{display:block;height:100%}
+.tl .off{background:var(--off)}.tl .on{background:var(--signal)}.tl .blip{background:var(--warn)}
+.tlx{display:flex;justify-content:space-between;font:12px var(--f-mono);color:var(--mist);margin-top:5px;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mist);margin-top:8px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:12px;height:10px;border-radius:2px;display:inline-block}
+.skywrap{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;align-items:center}
+@media (max-width:420px){.skywrap{grid-template-columns:1fr}.skywrap svg{max-width:220px;margin:0 auto}}
+.skywrap svg{width:100%;height:auto;display:block}
+.skywrap p{font-size:14.5px;color:var(--mist)}
+.small-note{font-size:13.5px;color:var(--mist)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.card{background:var(--deep);border:1px solid var(--rule);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;text-align:left;color:inherit;font:inherit;padding:0;cursor:pointer}
+.card:hover{border-color:var(--sand)}
+.card[aria-current="true"]{border-color:var(--signal)}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center 40%;display:block;background:#000}
+.card .meta{padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.card b{font:800 20px var(--f-display);text-transform:uppercase}
+.card .ln{font:13px var(--f-mono);color:var(--mist);font-variant-numeric:tabular-nums}
+.card .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.waiting{border:1.5px dashed var(--rule);border-radius:14px;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:22px;min-height:220px;color:var(--mist)}
+.waiting b{font:800 22px var(--f-display);text-transform:uppercase;color:var(--cloud)}
+.filters{margin-bottom:18px}
+.empty{border:1.5px dashed var(--rule);border-radius:18px;padding:36px 24px;display:flex;flex-direction:column;gap:10px;color:var(--mist)}
+.empty b{font:800 30px var(--f-display);text-transform:uppercase;color:var(--cloud)}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.notes div{background:var(--deep);border:1px solid var(--rule);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.notes b{font:800 21px var(--f-display);text-transform:uppercase}
+.notes span{color:var(--mist);font-size:15px}
+
+footer{padding-block:36px 52px;color:var(--mist);font-size:14px}
+footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+
+.lb{position:fixed;inset:0;z-index:50;background:rgba(3,8,14,.94);display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));gap:10px}
+.lb .lbtop{display:flex;justify-content:space-between;align-items:center;gap:10px;font:600 12px var(--f-mono);letter-spacing:.08em;color:var(--mist);font-variant-numeric:tabular-nums}
+.lb .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:auto}
+.lb .stage img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+.lb .stage.full{align-items:flex-start}
+.lb .stage.full img{max-height:none}
+.lb .cap{color:var(--mist);font-size:15px;max-width:70ch;margin:0 auto;text-align:center}
+.lb .cap b{color:var(--cloud)}
+.lb button{font:600 13px var(--f-body);color:var(--cloud);background:var(--deep);border:1px solid var(--rule);border-radius:8px;padding:8px 13px;cursor:pointer}
+.lb button:hover{border-color:var(--sand)}
+.lb .nav{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<nav class="bar" aria-label="Site">
+  <div class="inner">
+    <a class="home" href="/"><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#0e2136"/><path d="M30 420 C 90 120, 422 120, 482 420" fill="none" stroke="#e8b45c" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 28"/><g transform="translate(256 178) rotate(-14)"><rect x="-142" y="-24" width="98" height="48" rx="4" fill="#20416a" stroke="#5ee1e6" stroke-width="9"/><rect x="44" y="-24" width="98" height="48" rx="4" fill="#20416a" stroke="#5ee1e6" stroke-width="9"/><rect x="-32" y="-32" width="64" height="64" rx="8" fill="#eef3f8"/></g><g stroke="#e8b45c" stroke-width="18" stroke-linecap="round" fill="none"><path d="M256 404 L176 358 M256 404 L336 358 M256 404 V440"/></g></svg>Capt. Abu Zaid Sat Station</a>
+    <div class="tabs"><a href="/">Station</a><a href="/captures.html" aria-current="page">Captures</a></div>
+  </div>
+</nav>
+
+<header class="top">
+  <div class="inner">
+    <div class="eyebrow">Gallery · straight from orbit</div>
+    <h1>Captures <span>from 820 km up</span></h1>
+    <p class="lede">Every picture here was caught live from a passing Russian weather satellite, by a wire antenna and a Raspberry Pi in Dubai. No internet, no downloads. Just radio.</p>
+  </div>
+</header>
+
+<section id="latest">
+  <div class="inner">
+    <div class="empty" id="empty" hidden>
+      <b>First pictures on the way</b>
+      <span>The station posts its best pass of each day here, all by itself. Check back after the next good pass.</span>
+    </div>
+    <div id="show" hidden>
+      <div class="head">
+        <div class="eyebrow" id="showEyebrow">Latest catch</div>
+        <h2 id="showTitle"></h2>
+      </div>
+      <div class="table">
+        <div class="viewer">
+          <div class="seg" id="views" role="group" aria-label="Picture type"></div>
+          <button class="frame" id="frame" type="button" aria-label="Open all pictures from this pass">
+            <img id="big" alt="">
+            <span class="zoom" id="zoomHint">TAP TO SEE ALL</span>
+          </button>
+          <div class="seg small" id="proj" role="group" aria-label="Picture shape">
+            <button type="button" data-p="spread" aria-pressed="true">As the satellite saw it</button>
+            <button type="button" data-p="equidistant" aria-pressed="false">Laid flat as a map</button>
+          </div>
+          <p class="explain" id="explain"></p>
+        </div>
+
+        <aside class="report" aria-label="Pass report">
+          <div>
+            <div class="when" id="rWhen"></div>
+            <h3>Pass report</h3>
+          </div>
+          <div class="verdict" id="rChips"></div>
+          <div class="specs">
+            <div class="spec"><small>Peak signal</small><b class="hi" id="rPeak"></b></div>
+            <div class="spec"><small>Locked on</small><b id="rLock"></b></div>
+            <div class="spec"><small>Highest point</small><b id="rMax"></b></div>
+            <div class="spec"><small>Direction</small><b id="rDir"></b></div>
+          </div>
+          <div id="tlBox">
+            <div class="sub">The pass, minute by minute</div>
+            <div class="tl" id="tl"></div>
+            <div class="tlx" id="tlx"></div>
+            <div class="legend"><span><i style="background:var(--signal)"></i>Locked, picture data</span><span><i style="background:var(--off);border:1px solid var(--rule)"></i>Too low to hear</span><span><i style="background:var(--warn)"></i>Brief drop</span></div>
+          </div>
+          <div class="skywrap" id="skyBox">
+            <svg id="sky" viewBox="0 0 300 300" role="img" aria-label="The satellite's path across the sky"></svg>
+            <p>The sky above the antenna, flattened into a circle. The centre is straight overhead, the edge is the horizon. The bright part of the line is where the picture came in.</p>
+          </div>
+          <p class="small-note">Signal is measured as SNR, short for signal-to-noise ratio: how far the satellite stands above the background hiss. Above about 5 dB usually makes a picture.</p>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="all">
+  <div class="inner">
+    <div class="head">
+      <div class="eyebrow">The archive</div>
+      <h2>All captures</h2>
+      <p class="lede">The best pass of each day goes up here, all by itself. Tap one to open its pictures and pass report.</p>
+    </div>
+    <div class="filters seg" id="filters" role="group" aria-label="Filter by satellite"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<section>
+  <div class="inner">
+    <div class="head"><div class="eyebrow">Reading the pictures</div><h2>What am I looking at?</h2></div>
+    <div class="notes">
+      <div><b>One long strip</b><span>The satellite photographs a band about 2,800 km wide as it flies, so each capture is a tall strip of Earth, not a square photo.</span></div>
+      <div><b>Different eyes</b><span>The camera sees in several kinds of light, some we can't see at all. Each picture type mixes them differently to bring out sea, desert, cloud or heat.</span></div>
+      <div><b>Why the ends fade</b><span>The top and bottom are where the satellite was low on the horizon. The signal is weakest there, so those edges can look noisy or cut off.</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="inner">
+    <span>Capt. Abu Zaid Sat Station · Dubai</span>
+    <span>Pictures decoded with SatDump on raspberry-noaa-v2 · posted automatically by the station</span>
+  </div>
+</footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="All pictures from this pass" hidden>
+  <div class="lbtop"><span id="lbCount"></span><span style="display:flex;gap:8px"><button type="button" id="lbFull">Full size</button><button type="button" id="lbClose">Close</button></span></div>
+  <div class="stage" id="lbStage"><img id="lbImg" alt=""></div>
+  <p class="cap" id="lbCap"></p>
+  <div class="nav"><button type="button" id="lbPrev">← Previous</button><button type="button" id="lbNext">Next →</button></div>
+</div>
+
+<script>
+(function(){
+  var KINDS={
+    '221':{label:'Natural-ish colour',txt:'<b>Natural-ish colour.</b> The closest to what your eye would see. Desert shows pale and sandy, the sea dark, clouds white.'},
+    '224':{label:'Cloud boost',txt:'<b>Cloud boost.</b> Mixes in a heat-sensing channel, so clouds pop out sharply against the land and sea.'},
+    'thermal':{label:'Temperature',txt:'<b>Temperature.</b> Colour shows warmth. Hot desert glows red and orange, cold high cloud tops turn deep blue.'},
+    '67':{label:'Infrared',txt:'<b>Infrared.</b> Pure heat, no daylight needed. Bright means cold, so tall storm clouds shine white. Works at night too.'},
+    'rain_221':{label:'Rain finder',txt:'<b>Rain finder.</b> The natural-ish colour picture with likely rain areas painted on top.'},
+    'rain_224':{label:'Rain finder · cloud boost',txt:'<b>Rain finder on cloud boost.</b> Likely rain painted over the cloud boost view, so you can see which clouds are actually raining.'},
+    'rain_67':{label:'Rain finder · infrared',txt:'<b>Rain finder on infrared.</b> Likely rain painted over the heat picture. The coldest, tallest clouds are usually the wet ones.'}
+  };
+  var PROJ={spread:' Shown as the satellite saw it, with the edges stretched so nothing looks squashed.',equidistant:' Shown laid flat like a map, so coastlines sit where they would on an atlas.'};
+  var DIRS={northbound:'Northbound',southbound:'Southbound'};
+  var DATA=[],P=null,kind='221',proj='spread',filter='all',lbList=[],lbI=0;
+  var $=function(id){return document.getElementById(id);};
+
+  function kindInfo(k){return KINDS[k]||{label:k,txt:'<b>'+k+'.</b>'};}
+  function fmtLock(s){var m=Math.floor(s/60),r=s%60;return m?(m+' min'+(r?' '+r+' s':'')):(r+' s');}
+  function fmtDay(d,long){var x=new Date(d+'T12:00:00');return x.toLocaleDateString('en-GB',long?{weekday:'short',day:'numeric',month:'short',year:'numeric'}:{day:'numeric',month:'short'});}
+  function compass(a){return ['North','North-east','East','South-east','South','South-west','West','North-west'][Math.round(((a%360)+360)%360/45)%8];}
+  function short(sat){return sat.replace('Meteor-M ','');}
+  function addMin(hhmm,s){var p=hhmm.split(':'),t=+p[0]*60+ +p[1]+Math.round(s/60);t=(t+1440)%1440;return ('0'+Math.floor(t/60)).slice(-2)+':'+('0'+t%60).slice(-2);}
+  function img(p,k,pr){var a=p.images.filter(function(i){return i.kind===k&&i.proj===pr;})[0];return a||p.images.filter(function(i){return i.kind===k;})[0]||p.images[0];}
+  function kindsOf(p){var seen={},out=[];p.images.forEach(function(i){if(!seen[i.kind]){seen[i.kind]=1;out.push(i.kind);}});return out;}
+  function quality(p){return p.lock_s>=240?['good','Clean picture']:p.lock_s>=120?['part','Partial picture']:['bad','Short picture'];}
+
+  function show(p,scroll){
+    P=p;var ks=kindsOf(p);if(ks.indexOf(kind)<0)kind=ks[0];
+    if(!p.images.some(function(i){return i.proj===proj;}))proj=p.images[0].proj;
+    var latest=p===DATA[0];
+    $('showEyebrow').textContent=latest?'Latest catch':'From the archive';
+    $('showTitle').textContent=p.sat+' · '+fmtDay(p.day);
+    $('rWhen').textContent=fmtDay(p.day,true)+' · '+p.start_local+' Dubai time';
+    var q=quality(p),chips='<span class="chip '+q[0]+'">'+q[1]+'</span>';
+    if(p.max_elev!=null)chips+=p.max_elev>=40?'<span class="chip good">High pass · '+p.max_elev+'°</span>':'<span class="chip bad">Low pass · '+p.max_elev+'°</span>';
+    $('rChips').innerHTML=chips;
+    $('rPeak').textContent=p.peak_snr!=null?p.peak_snr.toFixed(1)+' dB':'–';
+    $('rLock').textContent=p.lock_s!=null?fmtLock(p.lock_s):'–';
+    $('rMax').textContent=p.max_elev!=null?p.max_elev+'°'+(p.max_az!=null?' · '+compass(p.max_az).replace('North-','N').replace('South-','S'):''):'–';
+    $('rDir').textContent=DIRS[p.direction]||'–';
+    drawTimeline(p);drawSky(p);
+    var vb=$('views');vb.innerHTML='';
+    ks.forEach(function(k){var b=document.createElement('button');b.type='button';b.textContent=kindInfo(k).label;b.dataset.k=k;b.onclick=function(){kind=k;paint();};vb.appendChild(b);});
+    var hasEq=p.images.some(function(i){return i.proj==='equidistant';});$('proj').hidden=!hasEq;
+    paint();
+    document.querySelectorAll('.card').forEach(function(c){c.setAttribute('aria-current',c.dataset.id===p.id);});
+    if(scroll)$('latest').scrollIntoView({behavior:'smooth'});
+  }
+  function paint(){
+    $('views').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.k===kind);});
+    $('proj').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.p===proj);});
+    var i=img(P,kind,proj);$('big').src=i.file;$('big').alt=kindInfo(i.kind).label+' picture from '+P.sat+', '+fmtDay(P.day);
+    $('explain').innerHTML=kindInfo(i.kind).txt+(PROJ[i.proj]||'');
+    $('zoomHint').textContent='TAP TO SEE ALL '+P.images.length;
+  }
+  $('proj').querySelectorAll('button').forEach(function(b){b.onclick=function(){proj=b.dataset.p;paint();};});
+
+  function drawTimeline(p){
+    var tl=$('tl'),box=$('tlBox');
+    if(!p.timeline||!p.timeline.length){box.hidden=true;return;}
+    box.hidden=false;tl.innerHTML='';var total=0,firstOn=null,lastOn=null,acc=0;
+    p.timeline.forEach(function(seg,ix){
+      var cls=seg[0]?'on':(seg[1]<=20&&ix>0&&ix<p.timeline.length-1?'blip':'off');
+      var e=document.createElement('i');e.className=cls;e.style.flex=seg[1];tl.appendChild(e);
+      if(seg[0]){if(firstOn===null)firstOn=acc;lastOn=acc+seg[1];}acc+=seg[1];});
+    total=acc;
+    var start=p.start_local;
+    $('tlx').innerHTML='<span>'+start+'</span>'+(firstOn!==null?'<span>Locked '+addMin(start,firstOn)+'–'+addMin(start,lastOn)+'</span>':'')+'<span>'+addMin(start,total)+'</span>';
+    tl.setAttribute('aria-label','Signal over the pass, '+fmtLock(p.lock_s)+' locked in total');
+  }
+
+  function drawSky(p){
+    var s=$('sky'),box=$('skyBox');s.innerHTML='';
+    if(p.aos_az==null||p.max_az==null||p.max_elev==null){box.hidden=true;return;}
+    box.hidden=false;
+    var C=150,R=128,NS='http://www.w3.org/2000/svg';
+    function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);s.appendChild(e);return e;}
+    function pt(az,elv){var r=R*(90-elv)/90,t=az*Math.PI/180;return [C+r*Math.sin(t),C-r*Math.cos(t)];}
+    function d(a,b){return ((b-a+540)%360)-180;}
+    var aos=p.aos_az,mx=p.max_az,los=mx+d(aos,mx);
+    function at(t){var az=t<.5?aos+d(aos,mx)*(t*2):mx+d(mx,los)*((t-.5)*2);return pt(az,p.max_elev*Math.sin(Math.PI*t));}
+    function path(t0,t1){var o='';for(var i=0;i<=40;i++){var q=at(t0+(t1-t0)*i/40);o+=(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1);}return o;}
+    [0,30,60].forEach(function(e){el('circle',{cx:C,cy:C,r:R*(90-e)/90,fill:e===0?'#0b1a2c':'none',stroke:'#1f3a57','stroke-width':1});});
+    el('path',{d:'M'+C+' '+(C-R)+'V'+(C+R)+'M'+(C-R)+' '+C+'H'+(C+R),stroke:'#1f3a57','stroke-width':1,fill:'none'});
+    [['N',0],['E',90],['S',180],['W',270]].forEach(function(q){var c=pt(q[1],-12);var t=el('text',{x:c[0],y:c[1]+5,fill:'#9db0c6','font-family':'JetBrains Mono, monospace','font-size':14,'text-anchor':'middle'});t.textContent=q[0];});
+    el('path',{d:path(0,1),fill:'none',stroke:'#3a5a7c','stroke-width':3,'stroke-linecap':'round'});
+    if(p.timeline&&p.timeline.length){
+      var tot=0,on0=null,on1=null;p.timeline.forEach(function(g){if(g[0]){if(on0===null)on0=tot;on1=tot+g[1];}tot+=g[1];});
+      var dur=p.pass_end?(new Date(p.pass_end)-new Date(p.start_utc))/1000:tot;
+      if(on0!==null&&dur>0)el('path',{d:path(Math.min(1,on0/dur),Math.min(1,on1/dur)),fill:'none',stroke:'#5ee1e6','stroke-width':5,'stroke-linecap':'round'});
+    }
+    var a=at(0),b=at(.5),c=at(1);
+    el('circle',{cx:a[0],cy:a[1],r:6,fill:'#9db0c6'});el('circle',{cx:c[0],cy:c[1],r:6,fill:'#e8b45c'});el('circle',{cx:b[0],cy:b[1],r:6,fill:'#eef3f8'});
+    var right=b[0]<C;var lb=el('text',{x:b[0]+(right?12:-12),y:b[1]+5,fill:'#eef3f8','font-family':'JetBrains Mono, monospace','font-size':14,'text-anchor':right?'start':'end'});lb.textContent=p.max_elev+'°';
+    s.setAttribute('aria-label','Path across the sky: rose in the '+compass(aos).toLowerCase()+', highest in the '+compass(mx).toLowerCase()+' at '+p.max_elev+' degrees, set in the '+compass(los).toLowerCase());
+  }
+
+  function renderGrid(){
+    var sats=[];DATA.forEach(function(p){if(sats.indexOf(p.sat)<0)sats.push(p.sat);});
+    var f=$('filters');f.innerHTML='';f.hidden=sats.length<2;
+    ['all'].concat(sats).forEach(function(s){var b=document.createElement('button');b.type='button';b.textContent=s==='all'?'All':s;b.setAttribute('aria-pressed',s===filter);b.onclick=function(){filter=s;renderGrid();};f.appendChild(b);});
+    var g=$('grid');g.innerHTML='';
+    DATA.filter(function(p){return filter==='all'||p.sat===filter;}).forEach(function(p){
+      var q=quality(p),b=document.createElement('button');b.type='button';b.className='card';b.dataset.id=p.id;
+      b.innerHTML='<img loading="lazy" alt="" src="'+(p.thumb||img(p,'221','spread').file)+'"><span class="meta"><span class="row"><b>'+short(p.sat)+'</b><span class="chip '+q[0]+'">'+q[1].split(' ')[0]+'</span></span><span class="ln">'+fmtDay(p.day)+' · '+p.start_local+(p.max_elev!=null?' · max '+p.max_elev+'°':'')+'</span><span class="ln">Peak '+(p.peak_snr!=null?p.peak_snr.toFixed(1)+' dB':'–')+' · '+fmtLock(p.lock_s||0)+'</span></span>';
+      b.setAttribute('aria-current',P&&P.id===p.id);
+      b.onclick=function(){location.hash=p.id;show(p,true);};g.appendChild(b);});
+    var w=document.createElement('div');w.className='waiting';w.innerHTML='<b>Next one lands here</b><span>A new capture appears after each day\'s best pass. High passes, above 40°, give the longest pictures.</span>';g.appendChild(w);
+  }
+
+  function lbOpen(){
+    var order=kindsOf(P);lbList=[];
+    [proj,proj==='spread'?'equidistant':'spread'].forEach(function(pr){order.forEach(function(k){var a=P.images.filter(function(i){return i.kind===k&&i.proj===pr;})[0];if(a)lbList.push(a);});});
+    lbI=Math.max(0,lbList.indexOf(img(P,kind,proj)));$('lb').hidden=false;document.body.style.overflow='hidden';lbPaint();$('lbClose').focus();
+  }
+  function lbPaint(){var i=lbList[lbI];$('lbImg').src=i.file;$('lbImg').alt=kindInfo(i.kind).label;
+    $('lbCount').textContent=(lbI+1)+' / '+lbList.length+' · '+short(P.sat).toUpperCase()+' · '+fmtDay(P.day).toUpperCase();
+    $('lbCap').innerHTML=kindInfo(i.kind).txt+(PROJ[i.proj]||'');$('lbStage').classList.remove('full');$('lbFull').textContent='Full size';}
+  function lbClose(){$('lb').hidden=true;document.body.style.overflow='';$('frame').focus();}
+  function lbStep(n){lbI=(lbI+n+lbList.length)%lbList.length;lbPaint();}
+  $('frame').onclick=lbOpen;$('lbClose').onclick=lbClose;
+  $('lbPrev').onclick=function(){lbStep(-1);};$('lbNext').onclick=function(){lbStep(1);};
+  $('lbFull').onclick=function(){var s=$('lbStage');s.classList.toggle('full');this.textContent=s.classList.contains('full')?'Fit to screen':'Full size';};
+  document.addEventListener('keydown',function(e){if($('lb').hidden)return;if(e.key==='Escape')lbClose();if(e.key==='ArrowRight')lbStep(1);if(e.key==='ArrowLeft')lbStep(-1);});
+  var tx=null;$('lbStage').addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+  $('lbStage').addEventListener('touchend',function(e){if(tx===null||$('lbStage').classList.contains('full'))return;var dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)lbStep(dx<0?1:-1);tx=null;});
+
+  function pick(){var h=decodeURIComponent((location.hash||'').slice(1));return DATA.filter(function(p){return p.id===h;})[0]||DATA[0];}
+  window.addEventListener('hashchange',function(){if(DATA.length)show(pick(),true);});
+
+  fetch('captures/captures.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
+    DATA=(d.passes||[]).filter(function(p){return p.images&&p.images.length;});
+    if(!DATA.length)throw 0;
+    $('show').hidden=false;renderGrid();show(pick(),false);
+  }).catch(function(){$('empty').hidden=false;$('all').hidden=true;});
+})();
+</script>
+<!--PREVIEW-END-->
+</body>
+</html>
