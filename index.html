@@ -81,6 +81,12 @@ p{margin:0;max-width:62ch}
 .next .count{font-family:var(--f-display);font-weight:800;font-size:46px;line-height:1;color:var(--signal);font-variant-numeric:tabular-nums}
 .next .live{color:var(--ok)}
 .next > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hero .acts{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch}
+.cta{display:flex;align-items:center;gap:14px;background:var(--sand);color:var(--night);text-decoration:none;border-radius:14px;padding:14px 20px;font:800 22px var(--f-display);text-transform:uppercase;letter-spacing:.03em;width:fit-content;max-width:100%;box-sizing:border-box;transition:background .2s,transform .2s}
+.cta small{display:block;font:600 11px var(--f-mono);letter-spacing:.12em;color:#4a3410}
+.cta img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:none;background:var(--night)}
+.cta:hover{background:#f2c779;transform:translateY(-2px)}
+@media (prefers-reduced-motion:reduce){.cta{transition:none}}
 
 /* ---- chain ---- */
 section{padding-block:84px;border-bottom:1px solid var(--rule)}
@@ -280,11 +286,14 @@ footer .visits b{font:600 15px var(--f-mono);color:var(--signal);font-variant-nu
 </svg><div class="eyebrow">Home-built weather satellite ground station · Dubai</div></div>
     <h1><span class="galaxy" id="galaxyName">Capt. Abu Zaid</span><span>Sat Station</span></h1>
     <p class="lede">Russian weather satellites fly 820 km over Dubai at 27,000 km/h. A simple wire antenna catches their whisper, and a Raspberry Pi turns it into pictures of the Earth.</p>
+    <div class="acts">
     <div class="next" id="nextBox" aria-live="polite">
       <div><span class="k" id="nextLabel">Next good pass over Dubai</span><span class="count" id="nextCount">--:--:--</span></div>
       <div><span class="k">Satellite</span><span class="v" id="nextSat">…</span></div>
       <div><span class="k">Starts (Dubai time)</span><span class="v" id="nextTime">…</span></div>
       <div><span class="k">Highest point</span><span class="v" id="nextMax">…</span></div>
+    </div>
+    <a class="cta" href="/captures.html"><img id="ctaThumb" alt="" hidden><span><small id="ctaSub">Pictures from orbit</small>See the captures →</span></a>
     </div>
   </div>
 </header>
@@ -499,7 +508,7 @@ footer .visits b{font:600 15px var(--f-mono);color:var(--signal);font-variant-nu
       <div><i>02 · RECORD</i><b>Catch the signal</b><span>Wakes the dongle at rise time and records the raw radio stream until the satellite sets.</span></div>
       <div><i>03 · DECODE</i><b>Unpack the data</b><span>SatDump locks onto the digital signal (72k or 80k mode) and pulls out the picture data.</span></div>
       <div><i>04 · BUILD</i><b>Make the images</b><span>Stitches the scan lines into pictures and false-colour views: sea, desert and cloud.</span></div>
-      <div><i>05 · SHOW</i><b>Publish</b><span>Drops every capture into a web gallery with a log of signal quality for each pass.</span></div>
+      <div><i>05 · SHOW</i><b>Publish</b><span>Drops every capture into a web gallery with a log of signal quality for each pass. The best pass of each day lands on the <a href="/captures.html">Captures page</a>.</span></div>
     </div>
     <div style="margin-top:28px" class="term" aria-label="Example pass log">
 <span class="c">Capt. Abu Zaid Sat Station</span> · pass log
@@ -604,7 +613,7 @@ footer .visits b{font:600 15px var(--f-mono);color:var(--signal);font-variant-nu
 
 <footer>
   <div class="inner">
-    <span>Capt. Abu Zaid Sat Station · Dubai</span>
+    <span>Capt. Abu Zaid Sat Station · Dubai · <a href="/captures.html">Captures</a></span>
     <span>Orbit maths: satellite.js · Orbit data: CelesTrak / N2YO</span>
   </div>
   <div class="inner visits">
@@ -613,6 +622,18 @@ footer .visits b{font:600 15px var(--f-mono);color:var(--signal);font-variant-nu
   </div>
 </footer>
 
+<script>
+/* show the newest capture on the hero button */
+(function(){
+  if(!window.fetch) return;
+  fetch('captures/captures.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
+    var p=d&&d.passes&&d.passes[0]; if(!p||!p.thumb) return;
+    var im=document.getElementById('ctaThumb'); im.src=p.thumb; im.hidden=false;
+    var day=new Date(p.day+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    document.getElementById('ctaSub').textContent='Latest catch · '+day;
+  }).catch(function(){});
+})();
+</script>
 <script>
 /* paint a Milky Way texture and use it to fill the name */
 (function(){
