@@ -1,0 +1,115 @@
+{
+ "updated": "2026-10-28T13:12:18+00:00",
+ "passes": [
+  {
+   "id": "METEOR-M2-4-20261028-113156",
+   "sat": "Meteor-M N2-4",
+   "day": "2026-10-28",
+   "start_utc": "2026-10-28T11:31:56+00:00",
+   "start_local": "15:31",
+   "thumb": "captures/METEOR-M2-4-20261028-113156/thumb.jpg",
+   "polar": "captures/METEOR-M2-4-20261028-113156/polar.png",
+   "images": [
+    {
+     "kind": "221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261028-113156/spread_221.jpg"
+    },
+    {
+     "kind": "221",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261028-113156/equidistant_221.jpg"
+    },
+    {
+     "kind": "224",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261028-113156/spread_224.jpg"
+    },
+    {
+     "kind": "224",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261028-113156/equidistant_224.jpg"
+    },
+    {
+     "kind": "thermal",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261028-113156/spread_thermal.jpg"
+    },
+    {
+     "kind": "thermal",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261028-113156/equidistant_thermal.jpg"
+    },
+    {
+     "kind": "67",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261028-113156/spread_67.jpg"
+    },
+    {
+     "kind": "67",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261028-113156/equidistant_67.jpg"
+    },
+    {
+     "kind": "rain_221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261028-113156/spread_rain_221.jpg"
+    },
+    {
+     "kind": "rain_221",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261028-113156/equidistant_rain_221.jpg"
+    },
+    {
+     "kind": "rain_224",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261028-113156/spread_rain_224.jpg"
+    },
+    {
+     "kind": "rain_224",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261028-113156/equidistant_rain_224.jpg"
+    },
+    {
+     "kind": "rain_67",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261028-113156/spread_rain_67.jpg"
+    },
+    {
+     "kind": "rain_67",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261028-113156/equidistant_rain_67.jpg"
+    }
+   ],
+   "peak_snr": 15.4,
+   "lock_s": 410,
+   "timeline": [
+    [
+     0,
+     320
+    ],
+    [
+     1,
+     310
+    ],
+    [
+     0,
+     10
+    ],
+    [
+     1,
+     100
+    ],
+    [
+     0,
+     70
+    ]
+   ],
+   "max_elev": 27,
+   "aos_az": 192,
+   "max_az": 248,
+   "direction": "northbound",
+   "pass_end": "2026-10-28T11:46:10+00:00"
+  }
+ ]
+}
