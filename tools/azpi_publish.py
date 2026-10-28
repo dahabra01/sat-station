@@ -53,6 +53,7 @@ ANY_NET = "--any-network" in ARGS
 NO_PUSH = "--no-push" in ARGS
 
 FILE_RE = re.compile(r"^(METEOR-M2-\d)-(\d{8})-(\d{6})-(.+)\.(jpg|png)$")
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")   # colour codes satdump writes into the log
 LOG_RE = re.compile(
     r"^\[(\d\d:\d\d:\d\d) - (\d\d/\d\d/\d{4})\] \(I\) Progress.*?"
     r"(?:Peak SNR: ([\d.]+)dB|Viterbi : (SYNCED|NOSYNC))"
@@ -118,7 +119,7 @@ def log_lines():
                 continue
             with open(f, errors="ignore") as fh:
                 for line in fh:
-                    m = LOG_RE.match(line)
+                    m = LOG_RE.match(ANSI_RE.sub("", line))
                     if not m:
                         continue
                     t, d, snr, vit = m.groups()
