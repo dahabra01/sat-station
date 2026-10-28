@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-28T13:12:18+00:00",
+ "updated": "2026-10-28T13:15:20+00:00",
  "passes": [
   {
    "id": "METEOR-M2-4-20261028-113156",
@@ -81,6 +81,7 @@
      "file": "captures/METEOR-M2-4-20261028-113156/equidistant_rain_67.jpg"
     }
    ],
+   "mark": 1,
    "peak_snr": 15.4,
    "lock_s": 410,
    "timeline": [
