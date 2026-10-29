@@ -286,7 +286,11 @@ def build_entry(p, stats, geo):
         if proj not in ("spread", "equidistant"):
             continue
         name = f"{proj}_{kind}.jpg"
-        shrink(src, os.path.join(target, name), IMG_W)
+        try:
+            shrink(src, os.path.join(target, name), IMG_W)
+        except Exception as e:
+            say(f"skipping broken picture {os.path.basename(src)} ({e.__class__.__name__})")
+            continue
         images.append({"kind": kind, "proj": proj, "file": f"{folder}/{name}"})
     images.sort(key=lambda i: (kind_rank(i["kind"]), i["proj"] != "spread"))
     main = next((i for i in images if i["proj"] == "spread"), images[0] if images else None)
@@ -294,7 +298,11 @@ def build_entry(p, stats, geo):
     if main:
         thumb = f"{folder}/thumb.jpg"
         src = next(f for f in p["files"] if classify(f) == (main["kind"], main["proj"]))
-        shrink(src, os.path.join(SITE, thumb), THUMB_W)
+        try:
+            shrink(src, os.path.join(SITE, thumb), THUMB_W)
+        except Exception as e:
+            say(f"no thumbnail ({e.__class__.__name__}), using the main picture")
+            thumb = main["file"]
     num = p["sat_code"].split("-")[-1]
     local = p["start"].astimezone(DUBAI)
     entry = {
@@ -469,8 +477,20 @@ def describe(p, stats, geo=None):
     return txt
 
 
+def readable(path):
+    try:
+        from PIL import Image
+        with Image.open(path) as im:
+            im.verify()
+        return True
+    except ImportError:
+        return os.path.getsize(path) > 0
+    except Exception:
+        return False
+
+
 def picture_count(p):
-    return sum(1 for f in p["files"] if classify(f)[1] in ("spread", "equidistant"))
+    return sum(1 for f in p["files"] if classify(f)[1] in ("spread", "equidistant") and readable(f))
 
 
 # ---------------------------------------------------------------- writing the website
