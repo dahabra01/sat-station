@@ -1,6 +1,83 @@
 {
- "updated": "2026-10-28T13:15:20+00:00",
+ "updated": "2026-10-29T12:48:51+00:00",
  "passes": [
+  {
+   "id": "METEOR-M2-4-20261029-110952",
+   "sat": "Meteor-M N2-4",
+   "day": "2026-10-29",
+   "start_utc": "2026-10-29T11:09:52+00:00",
+   "start_local": "15:09",
+   "thumb": "captures/METEOR-M2-4-20261029-110952/thumb.jpg",
+   "polar": null,
+   "images": [
+    {
+     "kind": "221",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261029-110952/equidistant_221.jpg"
+    },
+    {
+     "kind": "224",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261029-110952/equidistant_224.jpg"
+    },
+    {
+     "kind": "67",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261029-110952/equidistant_67.jpg"
+    },
+    {
+     "kind": "rain_221",
+     "proj": "equidistant",
+     "file": "captures/METEOR-M2-4-20261029-110952/equidistant_rain_221.jpg"
+    }
+   ],
+   "mark": 1,
+   "peak_snr": 17.0,
+   "lock_s": 570,
+   "timeline": [
+    [
+     0,
+     130
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     0,
+     10
+    ],
+    [
+     1,
+     310
+    ],
+    [
+     0,
+     20
+    ],
+    [
+     1,
+     60
+    ],
+    [
+     0,
+     20
+    ],
+    [
+     1,
+     190
+    ],
+    [
+     0,
+     70
+    ]
+   ],
+   "max_elev": 48,
+   "aos_az": 180,
+   "max_az": 263,
+   "direction": "northbound",
+   "pass_end": "2026-10-29T11:24:58+00:00"
+  },
   {
    "id": "METEOR-M2-4-20261028-113156",
    "sat": "Meteor-M N2-4",
