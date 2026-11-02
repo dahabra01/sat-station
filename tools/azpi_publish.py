@@ -30,6 +30,11 @@ Options:
   --no-push       do everything except git commit/push (testing only)
   --ask-off       old behaviour: post the best pass of each day without asking
   --status        print the review state and exit
+  --post-folder DIR   post one Home Base pass folder (/srv/passes/<name>) right now.
+                      Pressing Publish on Home Base IS the Captain's yes, so no phone
+                      question. It takes that day's place on the site and the daily
+                      ask-first run won't swap it out. Home Wi-Fi only, like everything here.
+  --take-down ID      remove one posted pass from the site (Home Base's Take down button)
 """
 import datetime as dt
 import fcntl
@@ -79,7 +84,12 @@ TRIP_MIN_S = 3600                   # away at least an hour = a field trip (igno
 PORTAL = f"http://{HOME_IP}:8080/"
 SITE_URL = "https://sat.dahabra.com/captures.html"
 
-ARGS = set(sys.argv[1:])
+ARGV = sys.argv[1:]
+ARGS = set(ARGV)
+
+
+def arg_value(flag):
+    return ARGV[ARGV.index(flag) + 1] if flag in ARGV and ARGV.index(flag) + 1 < len(ARGV) else None
 DRY = "--dry-run" in ARGS
 ANY_NET = "--any-network" in ARGS
 NO_PUSH = "--no-push" in ARGS
@@ -565,6 +575,8 @@ def best_per_day(items, by_day):
         old = by_day.get(day)
         if old and old["id"] == p["id"]:
             continue
+        if old and old.get("manual"):
+            continue                          # the Captain picked that day's pass himself on Home Base
         if old and (old.get("lock_s", 0), old.get("peak_snr", 0)) >= score:
             continue
         out.append((p, stats))
@@ -730,6 +742,179 @@ def ask_first(st, by_day, all_passes):
     st["reviewed_until"] = max(p["start"] for p in new).isoformat()
     save_state(st)
 
+# ---------------------------------------------------------------- Home Base: post one pass folder
+SD_TS = re.compile(r"\[(\d\d):(\d\d):(\d\d) - (\d\d)/(\d\d)/(\d{4})\]")
+SD_SNR = re.compile(r"Peak SNR\s*:\s*([\d.]+)dB")
+SD_VIT = re.compile(r"Viterbi\s*:\s*(SYNCED|NOSYNC)")
+
+
+def satdump_stats(start):
+    """Same numbers as signal_stats, read from satdump's own logs (~/.config/satdump) instead.
+    Used when the station log doesn't cover the pass (rescued strays)."""
+    import calendar
+    t0, t1 = start.timestamp(), start.timestamp() + 22 * 60
+    peak, rows = 0.0, {}
+    for f in sorted(glob.glob(os.path.expanduser("~/.config/satdump/satdump-*.log"))):
+        try:
+            if os.path.getmtime(f) < t0 - 3600:
+                continue
+            with open(f, "rb") as fh:
+                for raw in fh:
+                    line = ANSI_RE.sub("", raw.decode("utf-8", "replace"))
+                    m = SD_TS.search(line)
+                    if not m:
+                        continue
+                    t = calendar.timegm((int(m.group(6)), int(m.group(5)), int(m.group(4)),
+                                         int(m.group(1)), int(m.group(2)), int(m.group(3)), 0, 0, 0))
+                    if not t0 <= t <= t1:
+                        continue
+                    s = SD_SNR.search(line)
+                    if s:
+                        peak = max(peak, float(s.group(1)))
+                    v = SD_VIT.search(line)
+                    if v:
+                        rows[t - t % 10] = 1 if v.group(1) == "SYNCED" else 0
+        except OSError:
+            continue
+    timeline = []
+    for t in sorted(rows):
+        s = rows[t]
+        if timeline and timeline[-1][0] == s:
+            timeline[-1][1] += 10
+        else:
+            timeline.append([s, 10])
+    return {"peak_snr": round(peak, 1), "lock_s": 10 * sum(rows.values()), "timeline": timeline}
+
+
+def folder_pictures(folder):
+    """satdump's pictures in a Home Base pass folder -> [(kind, proj, path)].
+    X_corrected.png = as the satellite saw it ('spread'), X_projected.png = laid flat ('equidistant')."""
+    pngs = sorted(glob.glob(os.path.join(folder, "products", "**", "*.png"), recursive=True))
+    comp = [f for f in pngs if os.path.basename(f).lower().startswith("msu_mr_rgb_")]
+    use = comp or [f for f in pngs if re.match(r"(?i)msu-mr-\d\.png$", os.path.basename(f))]
+    found = {}
+    for f in use:
+        stem = os.path.basename(f)[:-4].lower()
+        proj = "plain"
+        for suf, pr in (("_corrected", "spread"), ("_projected", "equidistant")):
+            if stem.endswith(suf):
+                stem, proj = stem[:-len(suf)], pr
+        if stem.endswith("_map"):
+            continue                          # same picture with map lines drawn on
+        kind = stem.replace("msu_mr_rgb_", "").replace("msu-mr-", "ch")
+        kind = {"thermal_channel": "thermal"}.get(kind, kind)
+        found[(kind, proj)] = f
+    out = []
+    for (kind, proj), f in found.items():
+        if proj == "plain":
+            if (kind, "spread") in found:
+                continue
+            proj = "spread"                   # no corrected version: show it as it came
+        out.append((kind, proj, f))
+    out.sort(key=lambda x: (kind_rank(x[0]), x[1] != "spread"))
+    return out[:16]
+
+
+def build_folder_entry(folder, meta):
+    sat = str(meta.get("sat") or "M2-x")
+    start = dt.datetime.fromtimestamp(int(meta["start"]), dt.timezone.utc)
+    pid = f"METEOR-{sat}-{start.strftime('%Y%m%d-%H%M%S')}"
+    pics = folder_pictures(folder)
+    if not pics:
+        raise RuntimeError("no pictures in that pass folder")
+    rel = os.path.join(OUT_DIR, pid)
+    target = os.path.join(SITE, rel)
+    if not DRY:
+        shutil.rmtree(target, ignore_errors=True)
+        os.makedirs(target, exist_ok=True)
+    images = []
+    for kind, proj, src in pics:
+        name = f"{proj}_{kind}.jpg"
+        try:
+            shrink(src, os.path.join(target, name), IMG_W)
+        except Exception as e:
+            say(f"skipping broken picture {os.path.basename(src)} ({e.__class__.__name__})")
+            continue
+        images.append({"kind": kind, "proj": proj, "file": f"{rel}/{name}"})
+    if not images:
+        raise RuntimeError("none of the pictures could be read")
+    main_kind = images[0]
+    thumb = f"{rel}/thumb.jpg"
+    try:
+        shrink(next(s for k, p, s in pics if (k, p) == (main_kind["kind"], main_kind["proj"])),
+               os.path.join(SITE, thumb), THUMB_W)
+    except Exception:
+        thumb = main_kind["file"]
+    stats = signal_stats(start)
+    if not stats["timeline"]:
+        stats = satdump_stats(start)
+    local = start.astimezone(DUBAI)
+    entry = {"id": pid, "sat": f"Meteor-M N2-{sat.split('-')[-1]}", "day": local.strftime("%Y-%m-%d"),
+             "start_utc": start.isoformat(), "start_local": local.strftime("%H:%M"),
+             "thumb": thumb, "polar": None, "images": images, "mark": MARK_VERSION,
+             "manual": True, "from": "home-base"}
+    entry.update(stats)
+    entry.update(pass_geometry(start))
+    return entry
+
+
+def result(ok, msg, **extra):
+    """Last line of output is JSON, for Home Base to read."""
+    say(msg)
+    print(json.dumps(dict(ok=ok, msg=msg, **extra)), flush=True)
+    return 0 if ok else 1
+
+
+def home_base(mode, value):
+    if not ANY_NET and not at_home():
+        return result(False, "Only on home Wi-Fi: the Pi never publishes over the phone's data")
+    if not os.path.isdir(os.path.join(SITE, ".git")):
+        return result(False, f"Website copy not found on the Pi ({SITE})")
+    if not DRY and not NO_PUSH:
+        r = git("pull", "--rebase", "--quiet")
+        if r.returncode:
+            return result(False, "Couldn't update the website copy: " + (r.stderr or r.stdout).strip()[-160:])
+    manifest = load_manifest(os.path.join(SITE, OUT_DIR, "captures.json"))
+    by_day = {e["day"]: e for e in manifest.get("passes", [])}
+
+    if mode == "take-down":
+        day = next((d for d, e in by_day.items() if e["id"] == value), None)
+        if not day:
+            return result(True, "Already off the website", id=value)
+        by_day.pop(day)
+        if not DRY:
+            shutil.rmtree(os.path.join(SITE, OUT_DIR, value), ignore_errors=True)
+            if not write_and_push(by_day, [value], "Taken down from Home Base"):
+                return result(False, "Couldn't send the change to GitHub, try again in a minute")
+        return result(True, "Taken off sat.dahabra.com", id=value)
+
+    folder = os.path.realpath(value)
+    try:
+        with open(os.path.join(folder, "pass.json")) as fh:
+            meta = json.load(fh)
+        int(meta["start"])
+    except Exception:
+        return result(False, "That isn't a Home Base pass folder")
+    try:
+        entry = build_folder_entry(folder, meta)
+    except Exception as e:
+        return result(False, f"Couldn't prepare the pictures: {e}")
+    old = by_day.get(entry["day"])
+    if old and old["id"] != entry["id"] and not DRY:
+        shutil.rmtree(os.path.join(SITE, OUT_DIR, old["id"]), ignore_errors=True)
+    by_day[entry["day"]] = entry
+    if DRY:
+        return result(True, f"Would post {entry['id']} with {len(entry['images'])} pictures", id=entry["id"])
+    if not write_and_push(by_day, [entry["id"]], "New capture (Home Base)"):
+        return result(False, "Couldn't send it to GitHub, try again in a minute")
+    replaced = f", in place of the {old['start_local']} pass" if old and old["id"] != entry["id"] else ""
+    ntfy_send("AZPi: posted to sat.dahabra.com",
+              f"Posted from Home Base: {entry['sat']} {entry['start_local']}, {len(entry['images'])} pictures, "
+              f"watermarked{replaced}. The Captures page updates in about a minute.",
+              tags="white_check_mark", click=f"{SITE_URL}#{entry['id']}")
+    return result(True, f"Published to sat.dahabra.com ({len(entry['images'])} pictures{replaced})",
+                  id=entry["id"], url=f"{SITE_URL}#{entry['id']}")
+
 
 # ---------------------------------------------------------------- main
 def main():
@@ -764,8 +949,20 @@ def main():
 
 if __name__ == "__main__":
     lock = open("/tmp/azpi_publish.lock", "w")
-    try:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
+    hb = ("post", arg_value("--post-folder")) if "--post-folder" in ARGS else \
+         ("take-down", arg_value("--take-down")) if "--take-down" in ARGS else None
+    if hb and not hb[1]:
+        sys.exit(result(False, "Missing the pass to work on"))
+    for _ in range(20 if hb else 1):            # Home Base waits up to 40 s for a run in progress
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
+        except BlockingIOError:
+            if hb:
+                time.sleep(2)
+    else:
+        if hb:
+            sys.exit(result(False, "The publisher is busy, most likely waiting for your Post it / Not now "
+                                   "answer on the phone. Answer that, or try again in 10 minutes."))
         sys.exit(0)
-    main()
+    sys.exit(home_base(*hb) if hb else main())
