@@ -808,30 +808,35 @@ def satdump_stats(start):
 
 
 def folder_pictures(folder):
-    """satdump's pictures in a Home Base pass folder -> [(kind, proj, path)].
-    X_corrected.png = as the satellite saw it ('spread'), X_projected.png = laid flat ('equidistant')."""
+    """satdump's pictures in a Home Base pass folder -> [(kind, proj, shown, clean)].
+    X_corrected.png = as the satellite saw it ('spread'), X_projected.png = laid flat ('equidistant').
+    With borders and city names switched on in SatDump (azpi_satdump_overlays.py) it also writes
+    X_corrected_map.png: that labelled one is what the Captures page shows, the clean one is kept
+    for the Footprint map."""
     pngs = sorted(glob.glob(os.path.join(folder, "products", "**", "*.png"), recursive=True))
     comp = [f for f in pngs if os.path.basename(f).lower().startswith("msu_mr_rgb_")]
-    use = comp or [f for f in pngs if re.match(r"(?i)msu-mr-\d\.png$", os.path.basename(f))]
-    found = {}
+    use = comp or [f for f in pngs if re.match(r"(?i)msu-mr-\d(_map)?\.png$", os.path.basename(f))]
+    found, maps = {}, {}
     for f in use:
         stem = os.path.basename(f)[:-4].lower()
+        labelled = stem.endswith("_map")              # same picture with borders and names drawn on
+        if labelled:
+            stem = stem[:-4]
         proj = "plain"
         for suf, pr in (("_corrected", "spread"), ("_projected", "equidistant")):
             if stem.endswith(suf):
                 stem, proj = stem[:-len(suf)], pr
-        if stem.endswith("_map"):
-            continue                          # same picture with map lines drawn on
         kind = stem.replace("msu_mr_rgb_", "").replace("msu-mr-", "ch")
         kind = {"thermal_channel": "thermal"}.get(kind, kind)
-        found[(kind, proj)] = f
+        (maps if labelled else found)[(kind, proj)] = f
     out = []
     for (kind, proj), f in found.items():
+        shown = maps.get((kind, proj), f)
         if proj == "plain":
             if (kind, "spread") in found:
                 continue
             proj = "spread"                   # no corrected version: show it as it came
-        out.append((kind, proj, f))
+        out.append((kind, proj, shown, f))
     out.sort(key=lambda x: (kind_rank(x[0]), x[1] != "spread"))
     return out[:16]
 
@@ -849,7 +854,7 @@ def build_folder_entry(folder, meta):
         shutil.rmtree(target, ignore_errors=True)
         os.makedirs(target, exist_ok=True)
     images = []
-    for kind, proj, src in pics:
+    for kind, proj, src, clean in pics:
         name = f"{proj}_{kind}.jpg"
         try:
             shrink(src, os.path.join(target, name), IMG_W)
@@ -862,7 +867,7 @@ def build_folder_entry(folder, meta):
     main_kind = images[0]
     thumb = f"{rel}/thumb.jpg"
     try:
-        shrink(next(s for k, p, s in pics if (k, p) == (main_kind["kind"], main_kind["proj"])),
+        shrink(next(s for k, p, s, c in pics if (k, p) == (main_kind["kind"], main_kind["proj"])),
                os.path.join(SITE, thumb), THUMB_W)
     except Exception:
         thumb = main_kind["file"]
@@ -876,7 +881,36 @@ def build_folder_entry(folder, meta):
              "manual": True, "from": "home-base"}
     entry.update(stats)
     entry.update(pass_geometry(start))
+    # labelled pictures from SatDump: keep a clean natural-colour copy for the Footprint map
+    clean221 = next((c for k, p, s, c in pics if k == "221" and p == "spread"), None)
+    if any(s != c for k, p, s, c in pics):
+        entry["overlays"] = True
+        if clean221 and not DRY:
+            try:
+                shrink(clean221, os.path.join(target, "plain_221.jpg"), IMG_W)
+                entry["plain"] = f"{rel}/plain_221.jpg"
+            except Exception as e:
+                say(f"couldn't keep a clean copy for the map ({e.__class__.__name__})")
+    elif not DRY:
+        label_pictures(entry)                 # SatDump didn't draw them: draw borders and names ourselves
     return entry
+
+
+def label_pictures(entry):
+    """Fallback when SatDump's own borders and names are off: draw them from the orbit fit."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import azpi_footprint
+        import azpi_label_pictures
+        azpi_footprint.SITE = SITE
+        with open(os.path.join(SITE, FOOTPRINT_DIR, "overlay.json")) as fh:
+            overlay = json.load(fh)
+        why = azpi_label_pictures.label(entry, overlay, azpi_footprint.load_tles(), SITE, False)
+        say("borders and city names drawn on" if not why else f"no borders or names this time: {why}")
+    except ImportError as e:
+        say(f"no borders or names this time, missing a Python part on the Pi ({e.name})")
+    except Exception as e:
+        say(f"no borders or names this time: {e.__class__.__name__}: {e}")
 
 
 def result(ok, msg, **extra):

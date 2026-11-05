@@ -54,7 +54,9 @@
    "aos_az": 152,
    "max_az": 68,
    "direction": "northbound",
-   "pass_end": "2026-11-05T10:33:25+00:00"
+   "pass_end": "2026-11-05T10:33:25+00:00",
+   "plain": "captures/METEOR-M2-4-20261105-101833/plain_221.jpg",
+   "overlays": true
   },
   {
    "id": "METEOR-M2-3-20261104-052522",
@@ -109,7 +111,9 @@
    "aos_az": 15,
    "max_az": 80,
    "direction": "southbound",
-   "pass_end": "2026-11-04T05:40:35+00:00"
+   "pass_end": "2026-11-04T05:40:35+00:00",
+   "plain": "captures/METEOR-M2-3-20261104-052522/plain_221.jpg",
+   "overlays": true
   },
   {
    "id": "METEOR-M2-3-20261103-054836",
@@ -188,7 +192,9 @@
    "aos_az": 8,
    "max_az": 294,
    "direction": "southbound",
-   "pass_end": "2026-11-03T06:03:44+00:00"
+   "pass_end": "2026-11-03T06:03:44+00:00",
+   "plain": "captures/METEOR-M2-3-20261103-054836/plain_221.jpg",
+   "overlays": true
   },
   {
    "id": "METEOR-M2-3-20261102-061201",
@@ -259,7 +265,9 @@
    "aos_az": 360,
    "max_az": 274,
    "direction": "southbound",
-   "pass_end": "2026-11-02T06:26:34+00:00"
+   "pass_end": "2026-11-02T06:26:34+00:00",
+   "plain": "captures/METEOR-M2-3-20261102-061201/plain_221.jpg",
+   "overlays": true
   },
   {
    "id": "METEOR-M2-4-20261029-110952",

@@ -297,27 +297,25 @@ def map_xy(lat, lon):
     return (lon - LON0) / DLON, (LAT1 - lat) / DLAT
 
 
-def build_layer(entry, tles):
-    """One pass -> its patch of the map (colour + which pixels it really covers)."""
-    from scipy.interpolate import LinearNDInterpolator
-    from scipy.ndimage import map_coordinates
-
+def source_picture(entry):
+    """The clean (no borders or names drawn on) natural-colour picture of a pass, or None."""
+    if entry.get("plain"):                             # clean copy kept beside a labelled picture
+        return entry["plain"]
+    if has_map_lines(entry) or entry.get("overlays"):
+        return None
     pic = next((i for i in entry.get("images", []) if i["kind"] == KIND and i["proj"] == "spread"), None)
-    if not pic:
-        return None, f"no plain {KIND} picture"
-    path = os.path.join(SITE, pic["file"])
-    if not os.path.isfile(path):
-        return None, "picture file missing"
-    if has_map_lines(entry):
-        return None, "older picture with map lines drawn on it"
-    rgb = np.asarray(Image.open(path).convert("RGB"))
+    return pic["file"] if pic else None
+
+
+def locate(entry, rgb, tles):
+    """Work out when every row of a pass picture was taken.
+    Returns (sat, step, direction, t_top, placed) where placed = [(row0, row1, time_of_row0, fit)],
+    or (None, reason)."""
     W = rgb.shape[1]
-    rgb = rgb[: -int(round(W * 0.055))]               # leave out the watermark along the bottom
     code = "M2-3" if "M2-3" in entry["id"] else "M2-4"
     sat = tles.get(SAT_NAMES[code])
     if sat is None:
         return None, "no orbit data"
-
     bad = bad_rows(rgb)
     obs = sea_or_land(rgb)
     obs[bad] = 0
@@ -359,6 +357,37 @@ def build_layer(entry, tles):
             placed.append((r0, r1, t_pred, s_pred))    # too cloudy to check: trust the log's timing
         elif s >= MIN_FIT:
             placed.append((r0, r1, t0, s))
+    return (sat, step, direction, t_top, placed), None
+
+
+def row_times(H, step, direction, t_top, placed):
+    """Time of every picture row: fine-tuned where a stretch was placed, the log's timing elsewhere."""
+    t = t_top + direction * np.arange(H) * step
+    for r0, r1, t0, _ in placed:
+        t[r0:r1] = t0 + direction * (np.arange(r0, r1) - r0) * step
+    return t
+
+
+def build_layer(entry, tles):
+    """One pass -> its patch of the map (colour + which pixels it really covers)."""
+    from scipy.interpolate import LinearNDInterpolator
+    from scipy.ndimage import map_coordinates
+
+    src = source_picture(entry)
+    if not src:
+        return None, "only pictures with map lines drawn on" if has_map_lines(entry) else f"no plain {KIND} picture"
+    path = os.path.join(SITE, src)
+    if not os.path.isfile(path):
+        return None, "picture file missing"
+    rgb = np.asarray(Image.open(path).convert("RGB"))
+    W = rgb.shape[1]
+    rgb = rgb[: -int(round(W * 0.055))]               # leave out the watermark along the bottom
+    res, why = locate(entry, rgb, tles)
+    if res is None:
+        return None, why
+    sat, step, direction, t_top, placed = res
+    H = len(rgb)
+    code = "M2-3" if "M2-3" in entry["id"] else "M2-4"
     if not placed:
         return None, "couldn't line any part up with the coastline"
 

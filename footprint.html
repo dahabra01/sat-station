@@ -79,6 +79,12 @@ section{padding-block:52px;border-bottom:1px solid var(--rule)}
 .maptools{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--rule)}
 .stage{position:relative;background:#0b1624}
 .stage canvas{display:block;width:100%;height:auto;cursor:crosshair}
+.ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ov path{fill:none;stroke:var(--sand);stroke-opacity:.75;stroke-width:1.1;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.labels{position:absolute;inset:0;pointer-events:none}
+.city{position:absolute;transform:translate(-50%,-50%);font:600 11.5px var(--f-mono);color:#fff;white-space:nowrap;text-shadow:0 1px 2px #000,0 0 5px #000,0 0 8px rgba(0,0,0,.7)}
+.city::before{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;background:#fff;margin-right:5px;vertical-align:middle;box-shadow:0 0 3px #000}
+.city.cap{font-weight:700}
 .pin{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
 .pin i{display:block;width:11px;height:11px;border-radius:50%;background:var(--sand);border:2px solid var(--night);box-shadow:0 0 0 2px var(--sand)}
 .pin span{position:absolute;left:16px;top:-9px;white-space:nowrap;font:600 12px var(--f-mono);color:#fff;text-shadow:0 1px 3px #000,0 0 6px #000}
@@ -156,6 +162,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
           <button type="button" data-s="M2-4" aria-pressed="false">M2-4 only</button>
         </div>
         <div class="seg">
+          <button type="button" id="mapBtn" aria-pressed="true">Borders &amp; cities</button>
           <button type="button" id="edgeBtn" aria-pressed="true">Pass outlines</button>
           <a href="footprint/mosaic.jpg" id="fullLink" style="display:flex;align-items:center;font:600 12.5px var(--f-mono);padding:0 10px;min-height:40px">Full size ↗</a>
         </div>
@@ -168,6 +175,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
         <span><i style="background:var(--m3)"></i>Meteor-M2 3</span>
         <span><i style="background:var(--m4)"></i>Meteor-M2 4</span>
         <span><i style="background:#16283f;border:1px solid #3a5a7c"></i>Not caught yet</span>
+        <span><i style="background:none;border-top:2px solid var(--sand);height:0;border-radius:0"></i>Borders</span>
         <span class="push">Tap the map to see which pass that part came from.</span>
       </div>
     </div>
@@ -223,7 +231,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
   "use strict";
   var COL = { "M2-3": [94, 225, 230], "M2-4": [232, 180, 92] };
   var STATION = { lat: 25.2, lon: 55.3, name: "Dubai" };
-  var data, W, H, mosaic, base, owner, ownerSat, view, ctx, sat = "all", edges = true;
+  var data, W, H, mosaic, base, owner, ownerSat, view, ctx, sat = "all", edges = true, overlay = null, showMap = true;
 
   function $(id) { return document.getElementById(id); }
   function load(src) {
@@ -279,6 +287,51 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
     return { x: (lon - b.lon0) / (b.lon1 - b.lon0), y: (b.lat1 - lat) / (b.lat1 - b.lat0) };
   }
 
+  function drawOverlay() {
+    var stage = $("stage"), svg = $("ov"), box = $("labels");
+    if (!overlay) return;
+    if (!svg) {
+      svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "ov"); svg.id = "ov"; svg.setAttribute("aria-hidden", "true");
+      svg.setAttribute("viewBox", "0 0 1000 1000"); svg.setAttribute("preserveAspectRatio", "none");
+      var d = overlay.borders.map(function (line) {
+        return line.map(function (pt, n) {
+          var q = toXY(pt[1], pt[0]);
+          return (n ? "L" : "M") + (q.x * 1000).toFixed(1) + " " + (q.y * 1000).toFixed(1);
+        }).join("");
+      }).join("");
+      var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d); svg.appendChild(path);
+      stage.insertBefore(svg, $("pinDubai"));
+      box = document.createElement("div"); box.className = "labels"; box.id = "labels"; box.setAttribute("aria-hidden", "true");
+      stage.insertBefore(box, $("pinDubai"));
+    }
+    svg.hidden = box.hidden = !showMap;
+    box.innerHTML = "";
+    if (!showMap) return;
+    // place the most important names first and skip any that would bump into one already placed
+    var w = $("cv").getBoundingClientRect().width, h = w * H / W, placed = [{ x: 0, y: 0, w: 0, h: 0 }];
+    var pin = toXY(STATION.lat, STATION.lon);
+    placed.push({ x: pin.x * w - 8, y: pin.y * h - 12, w: 130, h: 24 });
+    overlay.cities.forEach(function (c) {
+      if (c.name === STATION.name) return;
+      if (w < 700 && c.tier > 1) return;
+      var q = toXY(c.lat, c.lon);
+      if (q.x < 0.01 || q.x > 0.99 || q.y < 0.01 || q.y > 0.99) return;
+      var px = Math.floor(q.x * W), py = Math.floor(q.y * H);
+      if (!owner[py * W + px]) return;                    // only name places the map has a picture of
+      var bw = c.name.length * 7.2 + 14, r = { x: q.x * w - bw / 2, y: q.y * h - 9, w: bw, h: 18 };
+      for (var i = 0; i < placed.length; i++) {
+        var o = placed[i];
+        if (r.x < o.x + o.w + 4 && o.x < r.x + r.w + 4 && r.y < o.y + o.h + 2 && o.y < r.y + r.h + 2) return;
+      }
+      placed.push(r);
+      var s = document.createElement("span"); s.className = "city" + (c.capital ? " cap" : "");
+      s.style.left = q.x * 100 + "%"; s.style.top = q.y * 100 + "%"; s.textContent = c.name;
+      box.appendChild(s);
+    });
+  }
+
   function popup(p, fx, fy) {
     var old = $("pop"); if (old) old.remove();
     var d = document.createElement("div"); d.className = "pop"; d.id = "pop";
@@ -326,6 +379,9 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
     stats(); list();
     var v = "?v=" + encodeURIComponent(d.updated);
     $("fullLink").href = "footprint/mosaic.jpg" + v;
+    fetch("footprint/overlay.json").then(function (r) { return r.json(); }).then(function (o) {
+      overlay = o; if (owner) drawOverlay();
+    }).catch(function () {});
     return Promise.all([load("footprint/mosaic.jpg" + v), load("footprint/base.png" + v),
       fetch("footprint/owners.json" + v).then(function (r) { return r.json(); })]);
   }).then(function (ims) {
@@ -335,9 +391,11 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
     $("loading").hidden = true; cv.hidden = false;
     draw();
     var pos = toXY(STATION.lat, STATION.lon), pin = document.createElement("div");
-    pin.className = "pin"; pin.style.left = pos.x * 100 + "%"; pin.style.top = pos.y * 100 + "%";
+    pin.className = "pin"; pin.id = "pinDubai"; pin.style.left = pos.x * 100 + "%"; pin.style.top = pos.y * 100 + "%";
     pin.innerHTML = "<i></i><span>Dubai · station</span>";
     $("stage").appendChild(pin);
+    drawOverlay();
+    var t; window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(drawOverlay, 150); });
     cv.addEventListener("click", function (e) {
       var r = cv.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
       var x = Math.floor(fx * W), y = Math.floor(fy * H), ow = owner[y * W + x];
@@ -354,6 +412,9 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
     sat = b.dataset.s;
     this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b); });
     if (owner) draw();
+  });
+  $("mapBtn").addEventListener("click", function () {
+    showMap = !showMap; this.setAttribute("aria-pressed", showMap); drawOverlay();
   });
   $("edgeBtn").addEventListener("click", function () {
     edges = !edges; this.setAttribute("aria-pressed", edges); if (owner) draw();
