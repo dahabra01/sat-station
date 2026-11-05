@@ -38,7 +38,8 @@ Writes into the website copy:
   footprint/footprint.json  the passes, their ratings and the map's corners
 
 Usage (normally called by azpi_publish.py before each push):
-  azpi_footprint.py [--site DIR] [--rebuild] [--remove ID] [--tle FILE]
+  azpi_footprint.py [--site DIR] [--rebuild] [--remove ID] [--tle FILE] [--compose]
+  (--compose: redraw the map from the stored layers even if nothing new came in)
 """
 import datetime as dt
 import json
@@ -78,6 +79,7 @@ DUBAI = dt.timezone(dt.timedelta(hours=4))
 VERSION = 7                  # bump to rebuild every layer after a change to the method
 
 ARGS = sys.argv[1:]
+DIRTY = False          # set when a layer was added outside update(); the next update() redraws the map
 
 
 def arg_value(flag):
@@ -566,6 +568,8 @@ def layer_from_folder(entry, folder):
         thumb_src = colour
     save_layer(info, colour, have, thumb_src)
     say(f"added {entry['id']} from SatDump's own map placement: rating {score}")
+    global DIRTY
+    DIRTY = True                                      # the map picture needs redrawing
     return True
 
 
@@ -711,7 +715,7 @@ def write_site(order, mosaic, owner):
 # ---------------------------------------------------------------- main
 def update(site=None, force=False):
     """Bring the footprint up to date with captures/captures.json. Returns True if anything changed."""
-    global SITE
+    global SITE, DIRTY
     if site:
         SITE = site
     if "--rebuild" in ARGS and os.path.isdir(os.path.join(WORK, "layers")):
@@ -728,7 +732,7 @@ def update(site=None, force=False):
             if (e["id"] not in done or (done[e["id"]].get("version") != VERSION
                                         and done[e["id"]].get("method") != "satdump"))
             and skipped.get(e["id"], {}).get("version") != VERSION]
-    changed = bool(remove) or force
+    changed = bool(remove) or force or DIRTY or "--compose" in ARGS
     tles = load_tles() if todo else {}
     for e in sorted(todo, key=lambda e: e["start_utc"]):
         try:
@@ -749,6 +753,7 @@ def update(site=None, force=False):
     if not changed and os.path.exists(os.path.join(SITE, "footprint", "footprint.json")):
         say("nothing new")
         return False
+    DIRTY = False
     order, mosaic, owner = compose(load_layers())
     doc = write_site(order, mosaic, owner)
     say(f"map written: {doc['pass_count']} passes, {doc['area_km2'] / 1e6:.1f} million km2")
