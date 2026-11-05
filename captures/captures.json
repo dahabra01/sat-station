@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-05T11:43:45+00:00",
+ "updated": "2026-11-05T14:09:19+00:00",
  "passes": [
   {
    "id": "METEOR-M2-4-20261105-101833",
@@ -211,9 +211,34 @@
      "file": "captures/METEOR-M2-3-20261102-061201/spread_221.jpg"
     },
     {
+     "kind": "rain_221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261102-061201/spread_rain_221.jpg"
+    },
+    {
      "kind": "124",
      "proj": "spread",
      "file": "captures/METEOR-M2-3-20261102-061201/spread_124.jpg"
+    },
+    {
+     "kind": "cloudtop",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261102-061201/spread_cloudtop.jpg"
+    },
+    {
+     "kind": "enhanced_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261102-061201/spread_enhanced_ir.jpg"
+    },
+    {
+     "kind": "color_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261102-061201/spread_color_ir.jpg"
+    },
+    {
+     "kind": "ir38",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261102-061201/spread_ir38.jpg"
     },
     {
      "kind": "mcir",
@@ -229,45 +254,16 @@
    "mark": 1,
    "manual": true,
    "from": "home-base",
-   "peak_snr": 14.6,
-   "lock_s": 380,
-   "timeline": [
-    [
-     0,
-     150
-    ],
-    [
-     1,
-     230
-    ],
-    [
-     0,
-     40
-    ],
-    [
-     1,
-     40
-    ],
-    [
-     0,
-     10
-    ],
-    [
-     1,
-     110
-    ],
-    [
-     0,
-     30
-    ]
-   ],
+   "peak_snr": 0.0,
+   "lock_s": 0,
+   "timeline": [],
    "max_elev": 35,
    "aos_az": 360,
    "max_az": 274,
    "direction": "southbound",
    "pass_end": "2026-11-02T06:26:34+00:00",
-   "plain": "captures/METEOR-M2-3-20261102-061201/plain_221.jpg",
-   "overlays": true
+   "overlays": true,
+   "plain": "captures/METEOR-M2-3-20261102-061201/plain_221.jpg"
   },
   {
    "id": "METEOR-M2-4-20261029-110952",
