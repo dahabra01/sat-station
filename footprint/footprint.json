@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-05T14:11:55+00:00",
+ "updated": "2026-11-05T14:24:13+00:00",
  "rule": "A pass only replaces ground already covered if its rating is the same or higher; same rating, the newer pass wins. Uncovered ground is filled by any pass.",
  "bounds": {
   "lon0": 25.0,
@@ -9,7 +9,7 @@
   "width": 1735,
   "height": 1714
  },
- "area_km2": 14988851,
+ "area_km2": 16637718,
  "pass_count": 4,
  "latest": "METEOR-M2-4-20261105-101833",
  "passes": [
@@ -19,10 +19,10 @@
    "start_utc": "2026-11-05T10:18:33+00:00",
    "start_local": "14:18",
    "day": "2026-11-05",
-   "rating": 80,
+   "rating": 91,
    "parts": {
     "signal": 27,
-    "clean": 26,
+    "clean": 37,
     "length": 20,
     "height": 7
    },
@@ -33,44 +33,26 @@
    "outlines": [
     [
      [
-      28.633,
-      46.104
+      45.968,
+      39.038
      ],
      [
-      34.468,
-      74.873
+      45.968,
+      79.819
      ],
      [
-      9.201,
-      78.808
+      1.027,
+      79.819
      ],
      [
-      3.685,
-      54.097
-     ]
-    ],
-    [
-     [
-      3.474,
-      54.148
-     ],
-     [
-      8.989,
-      78.849
-     ],
-     [
-      7.72,
-      79.101
-     ],
-     [
-      2.208,
-      54.453
+      1.027,
+      39.038
      ]
     ]
    ],
    "index": 4,
    "thumb": "footprint/thumbs/METEOR-M2-4-20261105-101833.jpg",
-   "share": 0.3695,
+   "share": 0.7902,
    "on_map": true,
    "link": "captures.html#METEOR-M2-4-20261105-101833"
   },
@@ -94,44 +76,26 @@
    "outlines": [
     [
      [
-      42.484,
-      44.97
+      43.098,
+      43.286
      ],
      [
-      36.097,
-      77.989
+      43.098,
+      77.772
      ],
      [
-      21.83,
-      71.63
+      21.012,
+      77.772
      ],
      [
-      27.743,
-      43.441
-     ]
-    ],
-    [
-     [
-      27.309,
-      43.383
-     ],
-     [
-      21.405,
-      71.477
-     ],
-     [
-      20.322,
-      71.095
-     ],
-     [
-      26.206,
-      43.234
+      21.012,
+      43.286
      ]
     ]
    ],
    "index": 3,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261104-052522.jpg",
-   "share": 0.3718,
+   "share": 0.0215,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261104-052522"
   },
@@ -155,44 +119,26 @@
    "outlines": [
     [
      [
-      39.57,
-      39.044
+      44.532,
+      36.875
      ],
      [
-      33.582,
-      69.907
+      44.532,
+      70.975
      ],
      [
-      20.622,
-      64.57
+      19.018,
+      70.975
      ],
      [
-      26.28,
-      37.523
-     ]
-    ],
-    [
-     [
-      24.978,
-      37.34
-     ],
-     [
-      19.34,
-      64.135
-     ],
-     [
-      17.697,
-      63.596
-     ],
-     [
-      23.313,
-      37.099
+      19.018,
+      36.875
      ]
     ]
    ],
    "index": 2,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261103-054836.jpg",
-   "share": 0.0736,
+   "share": 0.0671,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261103-054836"
   },
@@ -235,7 +181,7 @@
    ],
    "index": 1,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261102-061201.jpg",
-   "share": 0.1851,
+   "share": 0.1212,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261102-061201"
   }
