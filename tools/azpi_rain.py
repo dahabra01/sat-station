@@ -41,7 +41,7 @@ DAY_CLOUD = 140                 # by day, only clouds at least this bright in vi
 
 def find(folder, *names):
     """First picture in the pass's products whose name ends with one of `names` (any case)."""
-    files = glob.glob(os.path.join(folder, "products", "**", "*.png"), recursive=True)
+    files = glob.glob(os.path.join(folder, "**", "*.png"), recursive=True)
     for n in names:
         for f in files:
             if os.path.basename(f).lower().endswith(n.lower()):

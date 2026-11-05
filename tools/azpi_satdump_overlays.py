@@ -14,8 +14,8 @@ that file over its built-in settings, so the change survives SatDump updates.
 What gets switched on, for every Meteor MSU-MR picture type (221, 124, MCIR, ...):
   * country borders, sand coloured
   * city names (capitals and big regional capitals), white
-Also adds cloud enhancements made from the 3.8 um infrared (Cloud Top IR, Enhanced IR,
-Color Cloud IR), plus two helper pictures the publisher uses for the rain finder.
+Also adds one helper picture of the 3.8 um infrared, which the publisher turns into the
+rain finder and the cloud enhancements.
 What stays OFF on purpose:
   * the station marker (QTH): it would pin the station's exact spot on every public picture
   * lat/lon grid and coastlines
@@ -114,33 +114,17 @@ def overlay_keys():
     }
 
 
+STALE = ["AZ IR38 Temp", "Cloud Top IR 3.8", "Enhanced IR 3.8", "Color Cloud IR 3.8"]   # tried 5 Nov, SatDump can't make them
+
+
 def extra_composites(cfg_path):
-    """Extra Meteor pictures built from the 3.8 um infrared (channel 4), which is the only
-    infrared the Meteors are sending at the moment:
-      * three cloud enhancements, coloured by cloud-top temperature with SatDump's own colour scales
-      * two helper pictures (temperature and raw) the publisher uses to paint the rain finder;
-        these are never posted themselves
-    A picture type SatDump can't make (missing colour scale, channel not sent) is simply skipped."""
-    res = os.path.join(os.path.dirname(cfg_path), "resources")
-
-    def lut_ok(rel):
-        return not os.path.isdir(res) or os.path.isfile(os.path.join(res, rel))
-
-    temp = lambda lo, hi: {"cch4": {"type": "temperature", "min": lo, "max": hi}}
-    out = {
-        "AZ IR38 Temp": {"equation": "cch4", "calib_cfg": temp(180, 330), "geo_correct": True, "autogen": True},
-        "AZ IR38 Raw": {"equation": "ch4", "geo_correct": True, "autogen": True},
-    }
-    for name, lut, lo, hi in (("Cloud Top IR 3.8", "lut/cal/CloudTopIR.png", 183.15, 323.15),
-                              ("Enhanced IR 3.8", "lut/cal/EnhancedIR.png", 200, 300),
-                              ("Color Cloud IR 3.8", "lut/cal/Multispectral.png", 180, 320)):
-        if not lut_ok(lut):
-            print(f"  (skipping {name}: SatDump has no {lut})")
-            continue
-        entry = {"channels": "cch4", "lut": lut, "calib_cfg": temp(lo, hi), "geo_correct": True, "autogen": True}
-        entry.update(overlay_keys())
-        out[name] = entry
-    return out
+    """One helper picture from the 3.8 um infrared (channel 4), the only infrared the Meteors
+    are sending at the moment: the raw channel, geometry-corrected, with and without borders
+    and names. The publisher builds the rain finder and the cloud enhancements from it
+    (azpi_rain.py, azpi_enhance.py); the helper itself is never posted."""
+    entry = {"equation": "ch4", "geo_correct": True, "autogen": True}
+    entry.update(overlay_keys())
+    return {"AZ IR38 Raw": entry}
 
 
 def main():
@@ -196,6 +180,9 @@ def main():
 
     current = load_jsonc(path) if os.path.isfile(path) else {}
     updated = merge(json.loads(json.dumps(current)), diff)
+    comps = updated.get("viewer", {}).get("instruments", {}).get("msu_mr", {}).get("rgb_composites", {})
+    for name in STALE:
+        comps.pop(name, None)
     if DRY:
         print(f"\nWould turn on borders + city names for {count} picture types in {path}")
         print(json.dumps(diff, indent=1)[:3000])

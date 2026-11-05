@@ -871,6 +871,8 @@ def build_folder_entry(folder, meta):
     rain = rain_picture(folder, target, rel)
     if rain:
         images.insert(1 if images and images[0]["kind"] == "221" else 0, rain)
+    images += enhancement_pictures(folder, target, rel)
+    images.sort(key=lambda i: (kind_rank(i["kind"]), i["proj"] != "spread"))
     main_kind = images[0]
     thumb = f"{rel}/thumb.jpg"
     try:
@@ -922,6 +924,27 @@ def rain_picture(folder, target, rel):
     except Exception as e:
         say(f"no rain picture this time: {e.__class__.__name__}: {e}")
         return None
+
+
+def enhancement_pictures(folder, target, rel):
+    """Cloud enhancements (tools/azpi_enhance.py) coloured from the raw 3.8 um infrared with
+    SatDump's own colour scales: cloud tops, storm enhancement, colour cloud IR."""
+    if DRY:
+        return []
+    out = []
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import azpi_enhance
+        for kind, tmp in azpi_enhance.make(folder, "/tmp"):
+            name = f"spread_{kind}.jpg"
+            try:
+                shrink(tmp, os.path.join(target, name), IMG_W)
+                out.append({"kind": kind, "proj": "spread", "file": f"{rel}/{name}"})
+            finally:
+                os.remove(tmp)
+    except Exception as e:
+        say(f"no cloud enhancements this time: {e.__class__.__name__}: {e}")
+    return out
 
 
 def label_pictures(entry):
