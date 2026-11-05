@@ -86,6 +86,9 @@ p{margin:0;max-width:62ch}
 .cta small{display:block;font:600 11px var(--f-mono);letter-spacing:.12em;color:#4a3410}
 .cta img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:none;background:var(--night)}
 .cta:hover{background:#f2c779;transform:translateY(-2px)}
+.cta.alt{background:transparent;color:var(--cloud);border:1.5px solid var(--sand)}
+.cta.alt small{color:var(--sand)}
+.cta.alt:hover{background:var(--deep)}
 @media (prefers-reduced-motion:reduce){.cta{transition:none}}
 
 /* ---- chain ---- */
@@ -294,6 +297,7 @@ footer .visits b{font:600 15px var(--f-mono);color:var(--signal);font-variant-nu
       <div><span class="k">Highest point</span><span class="v" id="nextMax">…</span></div>
     </div>
     <a class="cta" href="/captures.html"><img id="ctaThumb" alt="" hidden><span><small id="ctaSub">Pictures from orbit</small>See the captures →</span></a>
+    <a class="cta alt" href="/footprint.html"><img src="/footprint/mosaic.jpg" alt=""><span><small>Every pass stitched together</small>Big Picture Sat Map →</span></a>
     </div>
   </div>
 </header>
@@ -613,7 +617,7 @@ footer .visits b{font:600 15px var(--f-mono);color:var(--signal);font-variant-nu
 
 <footer>
   <div class="inner">
-    <span>Capt. Abu Zaid Sat Station · Dubai · <a href="/captures.html">Captures</a> · <a href="/footprint.html">Footprint</a></span>
+    <span>Capt. Abu Zaid Sat Station · Dubai · <a href="/captures.html">Captures</a> · <a href="/footprint.html">Big Picture Sat Map</a></span>
     <span>Orbit maths: satellite.js · Orbit data: CelesTrak / N2YO</span>
   </div>
   <div class="inner visits">
