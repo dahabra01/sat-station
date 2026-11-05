@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-05T14:09:19+00:00",
+ "updated": "2026-11-05T14:13:52+00:00",
  "passes": [
   {
    "id": "METEOR-M2-4-20261105-101833",
@@ -130,9 +130,34 @@
      "file": "captures/METEOR-M2-3-20261103-054836/spread_221.jpg"
     },
     {
+     "kind": "rain_221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261103-054836/spread_rain_221.jpg"
+    },
+    {
      "kind": "124",
      "proj": "spread",
      "file": "captures/METEOR-M2-3-20261103-054836/spread_124.jpg"
+    },
+    {
+     "kind": "cloudtop",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261103-054836/spread_cloudtop.jpg"
+    },
+    {
+     "kind": "enhanced_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261103-054836/spread_enhanced_ir.jpg"
+    },
+    {
+     "kind": "color_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261103-054836/spread_color_ir.jpg"
+    },
+    {
+     "kind": "ir38",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261103-054836/spread_ir38.jpg"
     },
     {
      "kind": "mcir",
@@ -193,8 +218,8 @@
    "max_az": 294,
    "direction": "southbound",
    "pass_end": "2026-11-03T06:03:44+00:00",
-   "plain": "captures/METEOR-M2-3-20261103-054836/plain_221.jpg",
-   "overlays": true
+   "overlays": true,
+   "plain": "captures/METEOR-M2-3-20261103-054836/plain_221.jpg"
   },
   {
    "id": "METEOR-M2-3-20261102-061201",
