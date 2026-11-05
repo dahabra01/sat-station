@@ -18,6 +18,8 @@ What it does:
   5. On "Post it": shrinks every picture of that pass to web size, stamps the
      watermark, writes captures/captures.json and pushes it all to the
      sat-station GitHub repo. GitHub Pages then updates the Captures page.
+     Before pushing it also stitches the new pass into the Footprint map
+     (tools/azpi_footprint.py) under the "same or higher rating" rule.
      A second message confirms it with a link.
   If a field trip caught nothing usable, it says so instead of asking.
 
@@ -58,6 +60,7 @@ LOGS += [LOGS[0] + ".1"]
 DB = os.environ.get("AZPI_DB", os.path.expanduser("~/raspberry-noaa-v2/db/panel.db"))
 SITE = os.environ.get("AZPI_SITE", os.path.expanduser("~/sat-station-site"))
 OUT_DIR = "captures"                # folder inside the website repo
+FOOTPRINT_DIR = "footprint"         # the stitched map (made by azpi_footprint.py)
 MIN_LOCK_S = 60                     # a pass needs at least 1 minute of lock to count as clean
 SETTLE_S = 300                      # ignore passes whose files changed in the last 5 minutes
 IMG_W = 800                         # web picture width
@@ -515,10 +518,11 @@ def write_and_push(by_day, changed, msg):
     os.makedirs(out_root, exist_ok=True)
     with open(os.path.join(out_root, "captures.json"), "w") as fh:
         json.dump(manifest, fh, indent=1)
+    update_footprint()
     if NO_PUSH:
         say("--no-push: files written, not sent")
         return True
-    git("add", "-A", OUT_DIR)
+    git("add", "-A", OUT_DIR, FOOTPRINT_DIR)
     r = git("commit", "-q", "-m", msg + ": " + ", ".join(changed))
     if r.returncode:
         say("git commit failed: " + (r.stderr or r.stdout).strip())
@@ -529,6 +533,23 @@ def write_and_push(by_day, changed, msg):
         return False
     say("sent to GitHub")
     return True
+
+
+def update_footprint(remove=None):
+    """Stitch new passes into the Footprint map (tools/azpi_footprint.py). Never blocks a post:
+    if anything goes wrong the Captures page still updates and the map catches up next time."""
+    if DRY:
+        return
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import azpi_footprint
+        if remove:
+            azpi_footprint.drop_layer(remove)
+        azpi_footprint.update(SITE, force=bool(remove))
+    except ImportError as e:
+        say(f"footprint map skipped, missing a Python part on the Pi ({e.name})")
+    except Exception as e:
+        say(f"footprint map skipped this time: {e.__class__.__name__}: {e}")
 
 
 def post_entries(by_day, picks):
@@ -884,6 +905,7 @@ def home_base(mode, value):
         by_day.pop(day)
         if not DRY:
             shutil.rmtree(os.path.join(SITE, OUT_DIR, value), ignore_errors=True)
+            update_footprint(remove=value)          # taken down = out of the map too
             if not write_and_push(by_day, [value], "Taken down from Home Base"):
                 return result(False, "Couldn't send the change to GitHub, try again in a minute")
         return result(True, "Taken off sat.dahabra.com", id=value)

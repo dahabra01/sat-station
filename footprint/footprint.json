@@ -1,0 +1,243 @@
+{
+ "updated": "2026-11-05T12:17:07+00:00",
+ "rule": "A pass only replaces ground already covered if its rating is the same or higher; same rating, the newer pass wins. Uncovered ground is filled by any pass.",
+ "bounds": {
+  "lon0": 25.0,
+  "lon1": 92.0,
+  "lat0": -6.0,
+  "lat1": 54.0,
+  "width": 1735,
+  "height": 1714
+ },
+ "area_km2": 13904243,
+ "pass_count": 4,
+ "latest": "METEOR-M2-4-20261105-101833",
+ "passes": [
+  {
+   "id": "METEOR-M2-4-20261105-101833",
+   "sat": "M2-4",
+   "start_utc": "2026-11-05T10:18:33+00:00",
+   "start_local": "14:18",
+   "day": "2026-11-05",
+   "rating": 78,
+   "parts": {
+    "signal": 27,
+    "clean": 24,
+    "length": 20,
+    "height": 7
+   },
+   "peak_snr": 14.7,
+   "lock_s": 780,
+   "max_elev": 46,
+   "direction": "northbound",
+   "outlines": [
+    [
+     [
+      28.88,
+      45.587
+     ],
+     [
+      34.865,
+      75.075
+     ],
+     [
+      8.632,
+      79.128
+     ],
+     [
+      2.998,
+      53.916
+     ]
+    ]
+   ],
+   "index": 4,
+   "thumb": "footprint/thumbs/METEOR-M2-4-20261105-101833.jpg",
+   "share": 0.4006,
+   "on_map": true,
+   "link": "captures.html#METEOR-M2-4-20261105-101833"
+  },
+  {
+   "id": "METEOR-M2-3-20261104-052522",
+   "sat": "M2-3",
+   "start_utc": "2026-11-04T05:25:22+00:00",
+   "start_local": "09:25",
+   "day": "2026-11-04",
+   "rating": 89,
+   "parts": {
+    "signal": 30,
+    "clean": 40,
+    "length": 9,
+    "height": 10
+   },
+   "peak_snr": 17.7,
+   "lock_s": 320,
+   "max_elev": 70,
+   "direction": "southbound",
+   "outlines": [
+    [
+     [
+      43.434,
+      45.126
+     ],
+     [
+      37.199,
+      77.962
+     ],
+     [
+      21.722,
+      71.056
+     ],
+     [
+      27.471,
+      43.481
+     ]
+    ],
+    [
+     [
+      27.54,
+      43.49
+     ],
+     [
+      21.789,
+      71.08
+     ],
+     [
+      20.615,
+      70.667
+     ],
+     [
+      26.345,
+      43.328
+     ]
+    ]
+   ],
+   "index": 3,
+   "thumb": "footprint/thumbs/METEOR-M2-3-20261104-052522.jpg",
+   "share": 0.4448,
+   "on_map": true,
+   "link": "captures.html#METEOR-M2-3-20261104-052522"
+  },
+  {
+   "id": "METEOR-M2-3-20261103-054836",
+   "sat": "M2-3",
+   "start_utc": "2026-11-03T05:48:36+00:00",
+   "start_local": "09:48",
+   "day": "2026-11-03",
+   "rating": 61,
+   "parts": {
+    "signal": 14,
+    "clean": 27,
+    "length": 10,
+    "height": 10
+   },
+   "peak_snr": 9.7,
+   "lock_s": 350,
+   "max_elev": 64,
+   "direction": "southbound",
+   "outlines": [
+    [
+     [
+      40.433,
+      39.03
+     ],
+     [
+      34.329,
+      70.547
+     ],
+     [
+      20.395,
+      64.719
+     ],
+     [
+      26.122,
+      37.425
+     ]
+    ],
+    [
+     [
+      25.115,
+      37.285
+     ],
+     [
+      19.404,
+      64.381
+     ],
+     [
+      17.636,
+      63.798
+     ],
+     [
+      23.322,
+      37.026
+     ]
+    ]
+   ],
+   "index": 2,
+   "thumb": "footprint/thumbs/METEOR-M2-3-20261103-054836.jpg",
+   "share": 0.0909,
+   "on_map": true,
+   "link": "captures.html#METEOR-M2-3-20261103-054836"
+  },
+  {
+   "id": "METEOR-M2-3-20261102-061201",
+   "sat": "M2-3",
+   "start_utc": "2026-11-02T06:12:01+00:00",
+   "start_local": "10:12",
+   "day": "2026-11-02",
+   "rating": 52,
+   "parts": {
+    "signal": 26,
+    "clean": 11,
+    "length": 11,
+    "height": 4
+   },
+   "peak_snr": 14.6,
+   "lock_s": 380,
+   "max_elev": 35,
+   "direction": "southbound",
+   "outlines": [
+    [
+     [
+      30.718,
+      32.152
+     ],
+     [
+      24.905,
+      60.492
+     ],
+     [
+      23.151,
+      59.83
+     ],
+     [
+      28.927,
+      31.927
+     ]
+    ],
+    [
+     [
+      26.873,
+      31.656
+     ],
+     [
+      21.134,
+      59.104
+     ],
+     [
+      16.298,
+      57.5
+     ],
+     [
+      21.966,
+      30.952
+     ]
+    ]
+   ],
+   "index": 1,
+   "thumb": "footprint/thumbs/METEOR-M2-3-20261102-061201.jpg",
+   "share": 0.0637,
+   "on_map": true,
+   "link": "captures.html#METEOR-M2-3-20261102-061201"
+  }
+ ]
+}

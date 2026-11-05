@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Footprint · Capt. Abu Zaid Sat Station</title>
+<meta name="description" content="Every Meteor satellite pass caught by a home-built ground station in Dubai, stitched into one map of everything it has seen.">
+<meta name="theme-color" content="#06101c">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Capt. Abu Zaid Sat Station">
+<meta property="og:title" content="Everywhere our antenna has seen">
+<meta property="og:description" content="Satellite passes caught from Dubai, stitched into one growing map of the region.">
+<meta property="og:url" content="https://sat.dahabra.com/footprint.html">
+<meta property="og:image" content="https://sat.dahabra.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script data-goatcounter="https://dahabra.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Same single-dark identity as the Station and Captures pages. */
+:root{
+  --night:#06101c;--deep:#0b1a2c;--band:#0e2136;--rule:#1f3a57;
+  --cloud:#eef3f8;--mist:#9db0c6;--sand:#e8b45c;--signal:#5ee1e6;--ok:#6fdc9c;--warn:#f0a35a;--track:#3a5a7c;--off:#14283f;
+  --m3:#5ee1e6;--m4:#e8b45c;
+  --f-display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gutter-l:max(16px,env(safe-area-inset-left,0px));
+  --gutter-r:max(16px,env(safe-area-inset-right,0px));
+  color-scheme:dark;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{background:var(--night);color:var(--cloud)}
+body{margin:0;font-family:var(--f-body);font-size:17px;line-height:1.6}
+img{max-width:100%}[hidden]{display:none!important}
+a{color:var(--signal)}
+.inner{max-width:1160px;margin:0 auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
+.eyebrow{font:600 12px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--sand)}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:.95;margin:0;letter-spacing:.01em;text-wrap:balance;text-transform:uppercase}
+p{margin:0;max-width:62ch}
+.lede{color:var(--mist);font-size:19px}
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+
+.bar{border-bottom:1px solid var(--rule)}
+.bar .inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px;flex-wrap:wrap}
+.home{display:flex;align-items:center;gap:10px;color:var(--cloud);text-decoration:none;font:800 20px var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.home svg{width:34px;height:34px;flex:none}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs a{font:600 12px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mist);text-decoration:none;padding:7px 11px;border-radius:8px;border:1px solid transparent}
+.tabs a:hover{color:var(--cloud)}
+.tabs a[aria-current]{color:var(--cloud);border-color:var(--rule);background:var(--deep)}
+
+.top{padding-block:52px 36px;border-bottom:1px solid var(--rule)}
+.top .inner{display:flex;flex-direction:column;gap:16px}
+.top h1{font-size:clamp(56px,11vw,128px);font-weight:900;line-height:.85;overflow-wrap:break-word}
+.top h1 span{color:var(--sand);display:block}
+
+section{padding-block:52px;border-bottom:1px solid var(--rule)}
+.head{display:flex;flex-direction:column;gap:12px;margin-bottom:26px}
+.head h2{font-size:clamp(36px,5.5vw,60px)}
+
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:14px;overflow:hidden}
+.spec{background:var(--band);padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.spec small{font:600 10.5px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mist)}
+.spec b{font:600 22px var(--f-mono);font-variant-numeric:tabular-nums}
+.spec b.hi{color:var(--signal)}
+.spec .tag{font:600 12.5px var(--f-mono)}
+
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:600 12.5px var(--f-mono);letter-spacing:.04em;color:var(--mist);background:var(--deep);border:1px solid var(--rule);border-radius:99px;padding:0 14px;min-height:40px;cursor:pointer}
+.seg button:hover{border-color:var(--mist);color:var(--cloud)}
+.seg button[aria-pressed="true"]{color:var(--night);background:var(--sand);border-color:var(--sand)}
+
+.mapbox{margin-top:22px;background:var(--deep);border:1px solid var(--rule);border-radius:18px;overflow:hidden}
+.maptools{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--rule)}
+.stage{position:relative;background:#0b1624}
+.stage canvas{display:block;width:100%;height:auto;cursor:crosshair}
+.pin{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
+.pin i{display:block;width:11px;height:11px;border-radius:50%;background:var(--sand);border:2px solid var(--night);box-shadow:0 0 0 2px var(--sand)}
+.pin span{position:absolute;left:16px;top:-9px;white-space:nowrap;font:600 12px var(--f-mono);color:#fff;text-shadow:0 1px 3px #000,0 0 6px #000}
+.pop{position:absolute;z-index:3;width:min(300px,80%);background:rgba(6,16,28,.95);border:1px solid var(--rule);border-radius:12px;padding:12px;display:flex;gap:12px;align-items:flex-start}
+.pop img{width:84px;height:84px;object-fit:cover;border-radius:8px;flex:none;background:#000}
+.pop b{font:800 20px var(--f-display);text-transform:uppercase;display:block}
+.pop .ln{font:12.5px var(--f-mono);color:var(--mist)}
+.pop a{font:600 13px var(--f-mono)}
+.pop button{position:absolute;right:6px;top:4px;background:none;border:0;color:var(--mist);font-size:22px;cursor:pointer;min-width:36px;min-height:36px}
+.mapfoot{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:12px 14px;border-top:1px solid var(--rule);font-size:14px;color:var(--mist)}
+.mapfoot span{display:flex;align-items:center;gap:7px}
+.mapfoot i{width:13px;height:13px;border-radius:3px;display:inline-block}
+.mapfoot .push{margin-left:auto}
+.loading{padding:60px 20px;text-align:center;color:var(--mist);font:600 13px var(--f-mono)}
+
+.rule{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.rule div{background:var(--deep);border:1px solid var(--rule);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.rule b{font:800 21px var(--f-display);text-transform:uppercase}
+.rule span{color:var(--mist);font-size:15px}
+.rule em{font-style:normal;color:var(--sand);font:600 13px var(--f-mono)}
+
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.card{background:var(--deep);border:1px solid var(--rule);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.card.hl{border-color:var(--signal)}
+.card img{width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center 40%;display:block;background:#000}
+.card .meta{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.card .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card b{font:800 20px var(--f-display);text-transform:uppercase}
+.card .ln{font:13px var(--f-mono);color:var(--mist);font-variant-numeric:tabular-nums}
+.score{font:600 24px var(--f-mono);font-variant-numeric:tabular-nums}
+.score small{font-size:13px;color:var(--mist)}
+.bars{display:flex;flex-direction:column;gap:5px}
+.bars div{display:grid;grid-template-columns:62px minmax(0,1fr) 44px;gap:8px;align-items:center;font:12px var(--f-mono);color:var(--mist)}
+.bars u{display:block;height:7px;border-radius:4px;background:var(--off);overflow:hidden;text-decoration:none}
+.bars u i{display:block;height:100%;background:var(--signal)}
+.chip{font:600 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:99px;border:1px solid currentColor;width:fit-content}
+.card a.more{font:600 13px var(--f-mono);padding:6px 0}
+
+footer{padding-block:36px 52px;color:var(--mist);font-size:14px}
+footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<nav class="bar" aria-label="Site">
+  <div class="inner">
+    <a class="home" href="/"><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#0e2136"/><path d="M30 420 C 90 120, 422 120, 482 420" fill="none" stroke="#e8b45c" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 28"/><g transform="translate(256 178) rotate(-14)"><rect x="-142" y="-24" width="98" height="48" rx="4" fill="#20416a" stroke="#5ee1e6" stroke-width="9"/><rect x="44" y="-24" width="98" height="48" rx="4" fill="#20416a" stroke="#5ee1e6" stroke-width="9"/><rect x="-32" y="-32" width="64" height="64" rx="8" fill="#eef3f8"/></g><g stroke="#e8b45c" stroke-width="18" stroke-linecap="round" fill="none"><path d="M256 404 L176 358 M256 404 L336 358 M256 404 V440"/></g></svg>Capt. Abu Zaid Sat Station</a>
+    <div class="tabs"><a href="/">Station</a><a href="/captures.html">Captures</a><a href="/footprint.html" aria-current="page">Footprint</a></div>
+  </div>
+</nav>
+
+<header class="top">
+  <div class="inner">
+    <div class="eyebrow">Meteor-M2 3 + Meteor-M2 4 · stitched</div>
+    <h1>Footprint <span>everywhere we've seen</span></h1>
+    <p class="lede">Every good pass the station catches gets pinned to the map in the right spot. Put together, they make one growing picture of the region, built pass by pass from Dubai.</p>
+  </div>
+</header>
+
+<section id="map">
+  <div class="inner">
+    <div class="specs" aria-label="Totals">
+      <div class="spec"><small>Passes in the map</small><b class="hi" id="sCount">–</b></div>
+      <div class="spec"><small>Ground covered</small><b id="sArea">–</b></div>
+      <div class="spec"><small>Satellites</small><b><span class="tag" style="color:var(--m3)">M2-3</span> · <span class="tag" style="color:var(--m4)">M2-4</span></b></div>
+      <div class="spec"><small>Latest pass added</small><b id="sLatest">–</b></div>
+    </div>
+
+    <div class="mapbox">
+      <div class="maptools">
+        <div class="seg" id="satSeg" role="group" aria-label="Show satellite">
+          <button type="button" data-s="all" aria-pressed="true">Both satellites</button>
+          <button type="button" data-s="M2-3" aria-pressed="false">M2-3 only</button>
+          <button type="button" data-s="M2-4" aria-pressed="false">M2-4 only</button>
+        </div>
+        <div class="seg">
+          <button type="button" id="edgeBtn" aria-pressed="true">Pass outlines</button>
+          <a href="footprint/mosaic.jpg" id="fullLink" style="display:flex;align-items:center;font:600 12.5px var(--f-mono);padding:0 10px;min-height:40px">Full size ↗</a>
+        </div>
+      </div>
+      <div class="stage" id="stage">
+        <div class="loading" id="loading">Loading the map…</div>
+        <canvas id="cv" role="img" aria-label="Map of the Middle East and Arabian Sea made from satellite passes caught in Dubai" hidden></canvas>
+      </div>
+      <div class="mapfoot">
+        <span><i style="background:var(--m3)"></i>Meteor-M2 3</span>
+        <span><i style="background:var(--m4)"></i>Meteor-M2 4</span>
+        <span><i style="background:#16283f;border:1px solid #3a5a7c"></i>Not caught yet</span>
+        <span class="push">Tap the map to see which pass that part came from.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="inner">
+    <div class="head">
+      <div class="eyebrow">The rule</div>
+      <h2>Only as good or better</h2>
+      <p class="lede">Every pass gets a rating out of 100. The map keeps the best view of each patch of ground, and stays fresh when a pass is just as good.</p>
+    </div>
+    <div class="rule">
+      <div><b>Same or higher wins</b><span>A new pass only replaces part of the map if its rating is the same or higher than the pass already there. Same rating, the newer one goes on top.</span></div>
+      <div><b>Weaker passes wait</b><span>A pass rated lower never covers up a better one. It only fills ground the map doesn't have yet.</span></div>
+      <div><b>How a pass is rated</b><span><em>Signal 30</em> how strong it came in · <em>Clean 40</em> how much of the picture is free of noise and gaps · <em>Length 20</em> how long it stayed locked · <em>Height 10</em> how high it climbed.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="passes">
+  <div class="inner">
+    <div class="head">
+      <div class="eyebrow">What's in the map</div>
+      <h2>The passes</h2>
+      <p class="lede">Newest first. The bar under each one shows how its rating was earned, and how much of today's map it still holds.</p>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+</section>
+
+<section>
+  <div class="inner">
+    <div class="head"><div class="eyebrow">Behind the map</div><h2>How it's stitched</h2></div>
+    <div class="rule">
+      <div><b>1 · Catch the pass</b><span>The station records a Meteor flyover and turns the radio signal into a picture, a strip of Earth about 2,800 km wide.</span></div>
+      <div><b>2 · Pin it down</b><span>The satellite's orbit says where it was every second. Each row of the picture is matched to that moment, then nudged until its coastlines sit exactly on a real coastline map.</span></div>
+      <div><b>3 · Lay it in</b><span>The pinned picture goes onto the map following the rule above. Noisy rows and bits that can't be pinned with confidence are left out, never guessed.</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="inner">
+    <span>Capt. Abu Zaid Sat Station · Dubai · <a href="/captures.html">Captures</a></span>
+    <span id="updated">Stitched automatically by the station</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var COL = { "M2-3": [94, 225, 230], "M2-4": [232, 180, 92] };
+  var STATION = { lat: 25.2, lon: 55.3, name: "Dubai" };
+  var data, W, H, mosaic, base, owner, ownerSat, view, ctx, sat = "all", edges = true;
+
+  function $(id) { return document.getElementById(id); }
+  function load(src) {
+    return new Promise(function (ok, bad) {
+      var im = new Image(); im.onload = function () { ok(im); }; im.onerror = bad; im.src = src;
+    });
+  }
+  function pixels(im) {
+    var c = document.createElement("canvas"); c.width = W; c.height = H;
+    var x = c.getContext("2d"); x.drawImage(im, 0, 0, W, H);
+    return x.getImageData(0, 0, W, H).data;
+  }
+  function unpack(o) {                       // runs per row -> one number per pixel
+    var a = new Uint8Array(W * H), i = 0;
+    o.rows.forEach(function (r) {
+      for (var j = 0; j < r.length; j += 2) { a.fill(r[j], i, i + r[j + 1]); i += r[j + 1]; }
+    });
+    return a;
+  }
+  function fmtDay(p) {
+    var d = new Date(p.start_utc);
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Dubai" }) +
+      " · " + (p.start_local || "");
+  }
+  function satName(s) { return s === "M2-3" ? "Meteor-M2 3" : "Meteor-M2 4"; }
+
+  function draw() {
+    var out = ctx.createImageData(W, H), o = out.data, n = W * H, i, k, ow, s, show;
+    for (i = 0; i < n; i++) {
+      k = i * 4; ow = owner[i];
+      s = ow ? ownerSat[ow] : null;
+      show = ow && (sat === "all" || s === sat);
+      var src = show ? mosaic : base;
+      o[k] = src[k]; o[k + 1] = src[k + 1]; o[k + 2] = src[k + 2]; o[k + 3] = 255;
+    }
+    if (edges) {
+      for (var y = 1; y < H - 1; y++) for (var x = 1; x < W - 1; x++) {
+        i = y * W + x; ow = owner[i];
+        if (!ow) continue;
+        if (owner[i - 1] !== ow || owner[i + 1] !== ow || owner[i - W] !== ow || owner[i + W] !== ow) {
+          s = ownerSat[ow];
+          if (sat !== "all" && s !== sat) continue;
+          var c = COL[s]; k = i * 4;
+          o[k] = c[0]; o[k + 1] = c[1]; o[k + 2] = c[2];
+        }
+      }
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+
+  function toXY(lat, lon) {
+    var b = data.bounds;
+    return { x: (lon - b.lon0) / (b.lon1 - b.lon0), y: (b.lat1 - lat) / (b.lat1 - b.lat0) };
+  }
+
+  function popup(p, fx, fy) {
+    var old = $("pop"); if (old) old.remove();
+    var d = document.createElement("div"); d.className = "pop"; d.id = "pop";
+    d.style.left = Math.min(fx * 100, 60) + "%"; d.style.top = Math.min(fy * 100, 70) + "%";
+    d.innerHTML = '<img alt="" src="' + p.thumb + '"><div><b>' + satName(p.sat) + '</b><div class="ln">' + fmtDay(p) +
+      '</div><div class="ln">Rating ' + p.rating + '/100 · holds ' + Math.round(p.share * 100) + '% of the map</div>' +
+      '<a href="' + p.link + '">See this pass →</a></div><button type="button" aria-label="Close">×</button>';
+    d.querySelector("button").onclick = function () { d.remove(); };
+    $("stage").appendChild(d);
+    document.querySelectorAll(".card").forEach(function (c) { c.classList.toggle("hl", c.dataset.id === p.id); });
+  }
+
+  function list() {
+    var box = $("list"); box.innerHTML = "";
+    data.passes.forEach(function (p) {
+      var c = document.createElement("article"); c.className = "card"; c.dataset.id = p.id;
+      var parts = p.parts || {}, max = { signal: 30, clean: 40, length: 20, height: 10 };
+      var names = { signal: "Signal", clean: "Clean", length: "Length", height: "Height" };
+      var bars = Object.keys(max).map(function (k) {
+        return '<div><span>' + names[k] + '</span><u><i style="width:' + Math.round(100 * (parts[k] || 0) / max[k]) +
+          '%"></i></u><span>' + (parts[k] || 0) + '/' + max[k] + '</span></div>';
+      }).join("");
+      var col = p.sat === "M2-3" ? "var(--m3)" : "var(--m4)";
+      var holds = p.on_map ? "Holds " + Math.max(1, Math.round(p.share * 100)) + "% of the map" : "Fully covered by better passes";
+      c.innerHTML = '<img loading="lazy" alt="Picture from ' + satName(p.sat) + ', ' + fmtDay(p) + '" src="' + p.thumb + '">' +
+        '<div class="meta"><div class="row"><b>' + satName(p.sat) + '</b><span class="score">' + p.rating + '<small>/100</small></span></div>' +
+        '<div class="ln">' + fmtDay(p) + ' · ' + (p.peak_snr != null ? p.peak_snr + ' dB' : '') + '</div>' +
+        '<span class="chip" style="color:' + col + '">' + holds + '</span>' +
+        '<div class="bars">' + bars + '</div>' +
+        '<a class="more" href="' + p.link + '">See this pass →</a></div>';
+      box.appendChild(c);
+    });
+  }
+
+  function stats() {
+    $("sCount").textContent = data.pass_count;
+    $("sArea").textContent = (data.area_km2 / 1e6).toFixed(1) + " million km²";
+    var last = data.passes.filter(function (p) { return p.id === data.latest; })[0];
+    $("sLatest").textContent = last ? fmtDay(last) : "–";
+    $("updated").textContent = "Map stitched " + new Date(data.updated).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dubai" }) + " Dubai time";
+  }
+
+  fetch("footprint/footprint.json", { cache: "no-cache" }).then(function (r) { return r.json(); }).then(function (d) {
+    data = d; W = d.bounds.width; H = d.bounds.height;
+    stats(); list();
+    var v = "?v=" + encodeURIComponent(d.updated);
+    $("fullLink").href = "footprint/mosaic.jpg" + v;
+    return Promise.all([load("footprint/mosaic.jpg" + v), load("footprint/base.png" + v),
+      fetch("footprint/owners.json" + v).then(function (r) { return r.json(); })]);
+  }).then(function (ims) {
+    mosaic = pixels(ims[0]); base = pixels(ims[1]); owner = unpack(ims[2]);
+    ownerSat = {}; data.passes.forEach(function (p) { ownerSat[p.index] = p.sat; });
+    var cv = $("cv"); cv.width = W; cv.height = H; ctx = cv.getContext("2d");
+    $("loading").hidden = true; cv.hidden = false;
+    draw();
+    var pos = toXY(STATION.lat, STATION.lon), pin = document.createElement("div");
+    pin.className = "pin"; pin.style.left = pos.x * 100 + "%"; pin.style.top = pos.y * 100 + "%";
+    pin.innerHTML = "<i></i><span>Dubai · station</span>";
+    $("stage").appendChild(pin);
+    cv.addEventListener("click", function (e) {
+      var r = cv.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+      var x = Math.floor(fx * W), y = Math.floor(fy * H), ow = owner[y * W + x];
+      var p = data.passes.filter(function (q) { return q.index === ow; })[0];
+      if (p && (sat === "all" || p.sat === sat)) popup(p, fx, fy);
+      else { var o = $("pop"); if (o) o.remove(); }
+    });
+  }).catch(function () {
+    $("loading").textContent = "The map isn't ready yet. Check back after the next good pass.";
+  });
+
+  $("satSeg").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    sat = b.dataset.s;
+    this.querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", x === b); });
+    if (owner) draw();
+  });
+  $("edgeBtn").addEventListener("click", function () {
+    edges = !edges; this.setAttribute("aria-pressed", edges); if (owner) draw();
+  });
+})();
+</script>
+</body>
+</html>
