@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-05T11:43:36+00:00",
+ "updated": "2026-11-05T11:43:45+00:00",
  "passes": [
   {
    "id": "METEOR-M2-4-20261105-101833",
@@ -55,6 +55,61 @@
    "max_az": 68,
    "direction": "northbound",
    "pass_end": "2026-11-05T10:33:25+00:00"
+  },
+  {
+   "id": "METEOR-M2-3-20261104-052522",
+   "sat": "Meteor-M N2-3",
+   "day": "2026-11-04",
+   "start_utc": "2026-11-04T05:25:22+00:00",
+   "start_local": "09:25",
+   "thumb": "captures/METEOR-M2-3-20261104-052522/thumb.jpg",
+   "polar": null,
+   "images": [
+    {
+     "kind": "221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261104-052522/spread_221.jpg"
+    },
+    {
+     "kind": "124",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261104-052522/spread_124.jpg"
+    },
+    {
+     "kind": "mcir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261104-052522/spread_mcir.jpg"
+    },
+    {
+     "kind": "msa",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261104-052522/spread_msa.jpg"
+    }
+   ],
+   "mark": 1,
+   "manual": true,
+   "from": "home-base",
+   "peak_snr": 17.7,
+   "lock_s": 320,
+   "timeline": [
+    [
+     0,
+     170
+    ],
+    [
+     1,
+     320
+    ],
+    [
+     0,
+     420
+    ]
+   ],
+   "max_elev": 70,
+   "aos_az": 15,
+   "max_az": 80,
+   "direction": "southbound",
+   "pass_end": "2026-11-04T05:40:35+00:00"
   },
   {
    "id": "METEOR-M2-3-20261103-054836",
