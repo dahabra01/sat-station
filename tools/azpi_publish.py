@@ -1029,6 +1029,9 @@ def home_base(mode, value):
     except Exception as e:
         return result(False, f"Couldn't prepare the pictures: {e}")
     old = by_day.get(entry["day"])
+    if old and old["id"] == entry["id"] and not entry.get("timeline") and old.get("timeline"):
+        for k in ("peak_snr", "lock_s", "timeline"):  # a repost after the log moved on: keep the readings
+            entry[k] = old[k]
     if old and old["id"] != entry["id"] and not DRY:
         shutil.rmtree(os.path.join(SITE, OUT_DIR, old["id"]), ignore_errors=True)
     by_day[entry["day"]] = entry

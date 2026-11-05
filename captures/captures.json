@@ -329,9 +329,38 @@
    "mark": 1,
    "manual": true,
    "from": "home-base",
-   "peak_snr": 0.0,
-   "lock_s": 0,
-   "timeline": [],
+   "peak_snr": 14.6,
+   "lock_s": 380,
+   "timeline": [
+    [
+     0,
+     150
+    ],
+    [
+     1,
+     230
+    ],
+    [
+     0,
+     40
+    ],
+    [
+     1,
+     40
+    ],
+    [
+     0,
+     10
+    ],
+    [
+     1,
+     110
+    ],
+    [
+     0,
+     30
+    ]
+   ],
    "max_elev": 35,
    "aos_az": 360,
    "max_az": 274,
@@ -415,7 +444,9 @@
    "aos_az": 180,
    "max_az": 263,
    "direction": "northbound",
-   "pass_end": "2026-10-29T11:24:58+00:00"
+   "pass_end": "2026-10-29T11:24:58+00:00",
+   "plain_map": "captures/METEOR-M2-4-20261029-110952/plain_map.jpg",
+   "repaired": true
   },
   {
    "id": "METEOR-M2-4-20261028-113156",

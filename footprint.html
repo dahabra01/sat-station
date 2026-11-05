@@ -356,6 +356,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
       }).join("");
       var col = p.sat === "M2-3" ? "var(--m3)" : "var(--m4)";
       var holds = p.on_map ? "Holds " + Math.max(1, Math.round(p.share * 100)) + "% of the map" : "Fully covered by better passes";
+      if (p.repaired) holds += " · repaired older picture";
       c.innerHTML = '<img loading="lazy" alt="Picture from ' + satName(p.sat) + ', ' + fmtDay(p) + '" src="' + p.thumb + '">' +
         '<div class="meta"><div class="row"><b>' + satName(p.sat) + '</b><span class="score">' + p.rating + '<small>/100</small></span></div>' +
         '<div class="ln">' + fmtDay(p) + ' · ' + (p.peak_snr != null ? p.peak_snr + ' dB' : '') + '</div>' +

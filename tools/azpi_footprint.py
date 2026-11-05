@@ -292,6 +292,10 @@ def lock_window(entry):
 
 # ---------------------------------------------------------------- rating
 def rating(entry, clean_share):
+    """Out of 100. A picture repaired from an older one with borders and names baked in
+    ('repaired') gets half marks for clean, so it fills gaps but rarely covers a true pass."""
+    if entry.get("repaired"):
+        clean_share *= 0.5
     def clamp(x):
         return max(0.0, min(1.0, x))
     parts = {
@@ -584,6 +588,40 @@ def layer_from_folder(entry, folder):
     return True
 
 
+def layer_from_map_picture(entry):
+    """An older pass that was repaired by hand and laid onto this map's grid already
+    (entry 'plain_map', black = no picture). Placed by fitting its baked-in borders to real ones."""
+    path = os.path.join(SITE, entry["plain_map"])
+    if not os.path.isfile(path):
+        return False
+    a = np.asarray(Image.open(path).convert("RGB"))
+    if a.shape[:2] != (MAP_H, MAP_W):
+        return False
+    have = a.mean(2) > 8
+    if not have.any():
+        return False
+    span = None
+    if entry.get("pass_end") and entry.get("start_utc"):
+        span = (dt.datetime.fromisoformat(entry["pass_end"]) - dt.datetime.fromisoformat(entry["start_utc"])).total_seconds()
+    clean_share = min(1.0, (entry.get("lock_s") or 0) / span) if span else 0.5
+    score, parts = rating(entry, clean_share)
+    ys, xs = np.nonzero(have)
+    corners = [(ys.min(), xs.min()), (ys.min(), xs.max()), (ys.max(), xs.max()), (ys.max(), xs.min())]
+    code = "M2-3" if "M2-3" in entry["id"] else "M2-4"
+    info = {
+        "id": entry["id"], "sat": code, "start_utc": entry["start_utc"],
+        "start_local": entry.get("start_local"), "day": entry.get("day"),
+        "rating": score, "parts": parts, "peak_snr": entry.get("peak_snr"),
+        "lock_s": entry.get("lock_s"), "max_elev": entry.get("max_elev"),
+        "direction": entry.get("direction"), "clean_share": round(clean_share, 3),
+        "fit": 1.0, "stretches": 1, "version": VERSION, "method": "repaired", "repaired": True,
+        "outlines": [[[round(LAT1 - (y + 0.5) * DLAT, 3), round(LON0 + (x + 0.5) * DLON, 3)] for y, x in corners]],
+    }
+    save_layer(info, a.copy(), have, a[ys.min():ys.max() + 1, xs.min():xs.max() + 1])
+    say(f"added {entry['id']} (repaired older picture): rating {score}")
+    return True
+
+
 def save_layer(info, colour, have, rgb):
     d = os.path.join(WORK, "layers")
     os.makedirs(d, exist_ok=True)
@@ -700,7 +738,7 @@ def write_site(order, mosaic, owner):
             shutil.copyfile(src, os.path.join(SITE, thumb))
             keep.add(info["id"] + ".jpg")
         p = {k: info.get(k) for k in ("id", "sat", "start_utc", "start_local", "day", "rating", "parts",
-                                      "peak_snr", "lock_s", "max_elev", "direction", "outlines")}
+                                      "peak_snr", "lock_s", "max_elev", "direction", "outlines", "repaired")}
         p.update(index=n, thumb=thumb, share=round(px / max(1, has.sum()), 4),
                  on_map=px > 0, link=f"captures.html#{info['id']}")
         passes.append(p)
@@ -741,11 +779,26 @@ def update(site=None, force=False):
     skipped = json.load(open(skipped_file)) if os.path.exists(skipped_file) else {}
     todo = [e for e in manifest.get("passes", [])
             if (e["id"] not in done or (done[e["id"]].get("version") != VERSION
-                                        and done[e["id"]].get("method") != "satdump"))
-            and skipped.get(e["id"], {}).get("version") != VERSION]
+                                        and done[e["id"]].get("method") not in ("satdump", "repaired")))
+            and (skipped.get(e["id"], {}).get("version") != VERSION or e.get("plain_map"))]
     changed = bool(remove) or force or DIRTY or "--compose" in ARGS
+    by_id = {e["id"]: e for e in manifest.get("passes", [])}
+    for info in done.values():                          # readings corrected since: re-rate
+        e = by_id.get(info["id"])
+        if e and "clean_share" in info:
+            sc, parts = rating(e, info["clean_share"])
+            if sc != info.get("rating"):
+                info["rating"], info["parts"] = sc, parts
+                with open(os.path.join(WORK, "layers", info["id"] + ".json"), "w") as fh:
+                    json.dump(info, fh, indent=1)
+                say(f"re-rated {info['id']}: {sc}")
+                changed = True
     tles = load_tles() if todo else {}
     for e in sorted(todo, key=lambda e: e["start_utc"]):
+        if e.get("plain_map"):
+            if layer_from_map_picture(e):
+                changed = True
+                continue
         try:
             res, why = build_layer(e, tles)
         except Exception as ex:                      # one bad pass must never stop the rest
