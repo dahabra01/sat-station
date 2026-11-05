@@ -545,6 +545,17 @@ def layer_from_folder(entry, folder):
     have = (a[..., 3] > 0) & (colour.mean(2) > 4)
     if not have.any():
         return False
+    # decoder marker lines (pure blue / yellow) and dropped lines (black streaks) survive in
+    # SatDump's laid-flat picture: take them out and patch thin ones from the picture beside them
+    from scipy.ndimage import binary_dilation, distance_transform_edt
+    inside = a[..., 3] > 0
+    lines = fake_colour(colour) | ((colour.mean(2) < 16) & inside)
+    lines = binary_dilation(lines, iterations=1) & inside
+    have &= ~lines
+    dist, idx = distance_transform_edt(~have, return_indices=True)
+    patch = lines & (dist <= 3)
+    colour[patch] = colour[idx[0][patch], idx[1][patch]]
+    have |= patch
     clean_share = 1.0
     thumb_src = None
     if flat:
