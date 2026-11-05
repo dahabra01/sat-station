@@ -75,7 +75,7 @@ MIN_ROWS = 24                # shortest stretch of clean rows worth placing
 RE = 6371.0
 E2 = 0.00669438
 DUBAI = dt.timezone(dt.timedelta(hours=4))
-VERSION = 1                  # bump to rebuild every layer after a change to the method
+VERSION = 4                  # bump to rebuild every layer after a change to the method
 
 ARGS = sys.argv[1:]
 
@@ -293,6 +293,16 @@ def rating(entry, clean_share):
 
 
 # ---------------------------------------------------------------- making a layer
+def binary_closing_vertical(mask, gap):
+    """Mark pixels with the mask both within `gap` pixels above and below."""
+    up = np.zeros_like(mask)
+    dn = np.zeros_like(mask)
+    for k in range(1, gap + 1):
+        up[k:] |= mask[:-k]
+        dn[:-k] |= mask[k:]
+    return mask | (up & dn)
+
+
 def map_xy(lat, lon):
     return (lon - LON0) / DLON, (LAT1 - lat) / DLAT
 
@@ -353,7 +363,7 @@ def locate(entry, rgb, tles):
         s, t0 = place_stretch(sat, obs, r0, r1, t_pred, step, direction, span=16 if win else 40)
         if s >= MIN_FIT and s - s_pred > 0.01:
             placed.append((r0, r1, t0, s))             # coastlines line up: use the fine-tuned time
-        elif win and (s_pred >= 0.6 or s_pred < 0):
+        elif win and (s_pred >= 0.5 or s_pred < 0):
             placed.append((r0, r1, t_pred, s_pred))    # too cloudy to check: trust the log's timing
         elif s >= MIN_FIT:
             placed.append((r0, r1, t0, s))
@@ -414,6 +424,10 @@ def build_layer(entry, tles):
         gx, gy = np.meshgrid(np.arange(x0, x1), np.arange(y0, y1))
         rc = f(gx.ravel(), gy.ravel())
         ok = ~np.isnan(rc[:, 0])
+        # the curved strip's outline isn't convex, so the interpolation also covers thin slivers
+        # just outside it, where every value sits exactly on the first/last row or column: drop those
+        e_ = 0.01
+        ok &= (rc[:, 0] > r0 + e_) & (rc[:, 0] < r1 - 1 - e_) & (rc[:, 1] > e_) & (rc[:, 1] < W - 1 - e_)
         rc = rc[ok]
         px, py = gx.ravel()[ok], gy.ravel()[ok]
         vals = np.stack([map_coordinates(rgb[..., k].astype(float), rc.T, order=1, mode="nearest")
@@ -424,6 +438,26 @@ def build_layer(entry, tles):
         # outline of this stretch for the page (corners in lat/lon)
         ring = [(lat[0, 0], lon[0, 0]), (lat[0, -1], lon[0, -1]), (lat[-1, -1], lon[-1, -1]), (lat[-1, 0], lon[-1, 0])]
         outlines.append([[round(float(a), 3), round(float(b), 3)] for a, b in ring])
+
+    # close thin seams (a few dropped noisy rows) by blending the picture above and below;
+    # wider gaps stay open: that ground really wasn't captured by this pass
+    seam = binary_closing_vertical(have, 3) & ~have
+    if seam.any():
+        Hm = have.shape[0]
+        up_v = np.zeros(colour.shape, float); up_d = np.zeros(have.shape)
+        dn_v = np.zeros(colour.shape, float); dn_d = np.zeros(have.shape)
+        for k in range(1, 4):
+            src = np.zeros_like(have); src[k:] = have[:-k]
+            got = seam & src & (up_d == 0)
+            ys, xs = np.nonzero(got); up_v[ys, xs] = colour[ys - k, xs]; up_d[ys, xs] = k
+            src = np.zeros_like(have); src[:-k] = have[k:]
+            got = seam & src & (dn_d == 0)
+            ys, xs = np.nonzero(got); dn_v[ys, xs] = colour[ys + k, xs]; dn_d[ys, xs] = k
+        both = seam & (up_d > 0) & (dn_d > 0)
+        w = (dn_d / (up_d + dn_d))[..., None]
+        blend = up_v * w + dn_v * (1 - w)
+        colour[both] = np.clip(blend[both], 0, 255).astype(np.uint8)
+        have |= both
 
     info = {
         "id": entry["id"], "sat": code, "start_utc": entry["start_utc"],
