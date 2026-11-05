@@ -276,7 +276,10 @@ def shrink(src, dst, width):
         subprocess.run(cmd, check=True)
 
 
-KIND_ORDER = ["221", "224", "thermal", "67", "rain_221", "rain_224", "rain_67"]
+KIND_ORDER = ["221", "rain_221", "rain_ir", "224", "124", "cloudtop", "enhanced_ir", "color_ir", "ir38",
+              "mcir", "msa", "thermal", "67", "rain_224", "rain_67"]
+KIND_NAMES = {"thermal_channel": "thermal", "channel_4_equalized": "ir38", "cloud_top_ir_3.8": "cloudtop",
+              "enhanced_ir_3.8": "enhanced_ir", "color_cloud_ir_3.8": "color_ir"}
 
 
 def kind_rank(k):
@@ -814,7 +817,8 @@ def folder_pictures(folder):
     X_corrected_map.png: that labelled one is what the Captures page shows, the clean one is kept
     for the Footprint map."""
     pngs = sorted(glob.glob(os.path.join(folder, "products", "**", "*.png"), recursive=True))
-    comp = [f for f in pngs if os.path.basename(f).lower().startswith("msu_mr_rgb_")]
+    comp = [f for f in pngs if os.path.basename(f).lower().startswith("msu_mr_")
+             and "az_ir38" not in os.path.basename(f).lower()]       # az_ir38: rain finder helpers, never shown
     use = comp or [f for f in pngs if re.match(r"(?i)msu-mr-\d(_map)?\.png$", os.path.basename(f))]
     found, maps = {}, {}
     for f in use:
@@ -826,8 +830,8 @@ def folder_pictures(folder):
         for suf, pr in (("_corrected", "spread"), ("_projected", "equidistant")):
             if stem.endswith(suf):
                 stem, proj = stem[:-len(suf)], pr
-        kind = stem.replace("msu_mr_rgb_", "").replace("msu-mr-", "ch")
-        kind = {"thermal_channel": "thermal"}.get(kind, kind)
+        kind = stem.replace("msu_mr_rgb_", "").replace("msu_mr_", "").replace("msu-mr-", "ch")
+        kind = KIND_NAMES.get(kind, kind)
         (maps if labelled else found)[(kind, proj)] = f
     out = []
     for (kind, proj), f in found.items():
@@ -864,6 +868,9 @@ def build_folder_entry(folder, meta):
         images.append({"kind": kind, "proj": proj, "file": f"{rel}/{name}"})
     if not images:
         raise RuntimeError("none of the pictures could be read")
+    rain = rain_picture(folder, target, rel)
+    if rain:
+        images.insert(1 if images and images[0]["kind"] == "221" else 0, rain)
     main_kind = images[0]
     thumb = f"{rel}/thumb.jpg"
     try:
@@ -894,6 +901,27 @@ def build_folder_entry(folder, meta):
     elif not DRY:
         label_pictures(entry)                 # SatDump didn't draw them: draw borders and names ourselves
     return entry
+
+
+def rain_picture(folder, target, rel):
+    """Rain finder (tools/azpi_rain.py): likely rain painted on the 221 picture by day,
+    on the infrared picture at night. Needs SatDump's infrared helper pictures."""
+    if DRY:
+        return None
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import azpi_rain
+        tmp = os.path.join("/tmp", f"azpi_rain_{os.getpid()}.png")
+        kind = azpi_rain.make(folder, tmp)
+        if not kind:
+            return None
+        name = f"spread_{kind}.jpg"
+        shrink(tmp, os.path.join(target, name), IMG_W)
+        os.remove(tmp)
+        return {"kind": kind, "proj": "spread", "file": f"{rel}/{name}"}
+    except Exception as e:
+        say(f"no rain picture this time: {e.__class__.__name__}: {e}")
+        return None
 
 
 def label_pictures(entry):
