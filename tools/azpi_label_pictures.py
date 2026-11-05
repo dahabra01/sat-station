@@ -89,12 +89,12 @@ def label(entry, overlay, tles, site, dry):
     res, why = F.locate(entry, ref[:-band], tles)
     if res is None:
         return why
-    sat, step, direction, t_top, placed = res
+    sat, step, direction, t_top, placed, hw, off = res
     if not placed:
         return "couldn't line the picture up with the coastline"
     times = F.row_times(len(ref), step, direction, t_top, placed)
     u = (np.arange(W) + 0.5) / W * 2 - 1
-    lat, lon = F.grid_latlon(sat, times, u, F.HALF_SWATH_KM)
+    lat, lon = F.grid_latlon(sat, times, u, hw, off)
     mask, (la1, lo0) = border_raster(overlay, lat, lon)
     bad221 = F.bad_rows(ref[:-band])
 

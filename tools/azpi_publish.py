@@ -818,7 +818,7 @@ def folder_pictures(folder):
     for the Footprint map."""
     pngs = sorted(glob.glob(os.path.join(folder, "products", "**", "*.png"), recursive=True))
     comp = [f for f in pngs if os.path.basename(f).lower().startswith("msu_mr_")
-             and "az_ir38" not in os.path.basename(f).lower()]       # az_ir38: rain finder helpers, never shown
+             and "_az_" not in os.path.basename(f).lower()]          # AZ ... pictures: helpers, never shown
     use = comp or [f for f in pngs if re.match(r"(?i)msu-mr-\d(_map)?\.png$", os.path.basename(f))]
     found, maps = {}, {}
     for f in use:
@@ -868,6 +868,7 @@ def build_folder_entry(folder, meta):
         images.append({"kind": kind, "proj": proj, "file": f"{rel}/{name}"})
     if not images:
         raise RuntimeError("none of the pictures could be read")
+    map_layer(entry_id=pid, folder=folder, start=start, sat=sat)
     rain = rain_picture(folder, target, rel)
     if rain:
         images.insert(1 if images and images[0]["kind"] == "221" else 0, rain)
@@ -903,6 +904,27 @@ def build_folder_entry(folder, meta):
     elif not DRY:
         label_pictures(entry)                 # SatDump didn't draw them: draw borders and names ourselves
     return entry
+
+
+def map_layer(entry_id, folder, start, sat):
+    """Put this pass on the Big Picture map using SatDump's own laid-flat picture (AZ 221 Map),
+    if SatDump made one. The map is recomposed at the next push."""
+    if DRY:
+        return
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import azpi_footprint
+        stats = signal_stats(start)
+        if not stats["timeline"]:
+            stats = satdump_stats(start)
+        e = {"id": entry_id, "start_utc": start.isoformat(),
+             "start_local": start.astimezone(DUBAI).strftime("%H:%M"),
+             "day": start.astimezone(DUBAI).strftime("%Y-%m-%d")}
+        e.update(stats)
+        e.update(pass_geometry(start))
+        azpi_footprint.layer_from_folder(e, folder)
+    except Exception as ex:
+        say(f"map placement from SatDump skipped: {ex.__class__.__name__}: {ex}")
 
 
 def rain_picture(folder, target, rel):

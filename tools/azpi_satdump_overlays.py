@@ -14,8 +14,9 @@ that file over its built-in settings, so the change survives SatDump updates.
 What gets switched on, for every Meteor MSU-MR picture type (221, 124, MCIR, ...):
   * country borders, sand coloured
   * city names (capitals and big regional capitals), white
-Also adds one helper picture of the 3.8 um infrared, which the publisher turns into the
-rain finder and the cloud enhancements.
+Also adds two hidden helper pictures: the raw 3.8 um infrared (the publisher turns it into
+the rain finder and the cloud enhancements), and the natural-colour picture laid flat on
+exactly the Big Picture map's grid (the map stitcher drops it straight in).
 What stays OFF on purpose:
   * the station marker (QTH): it would pin the station's exact spot on every public picture
   * lat/lon grid and coastlines
@@ -117,6 +118,24 @@ def overlay_keys():
 STALE = ["AZ IR38 Temp", "Cloud Top IR 3.8", "Enhanced IR 3.8", "Color Cloud IR 3.8"]   # tried 5 Nov, SatDump can't make them
 
 
+def map_grid_config(cfg_text):
+    """Projection settings that make SatDump lay a picture flat on exactly the Big Picture
+    map's grid (same corners, same pixels), in whichever format this SatDump version uses."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import azpi_footprint as F
+    lon1 = F.LON0 + F.MAP_W * F.DLON
+    lat0 = F.LAT1 - F.MAP_H * F.DLAT
+    if '"equirec"' in cfg_text:                       # SatDump 1.2 style
+        conf = {"type": "equirec", "offset_x": F.LON0, "offset_y": F.LAT1,
+                "scalar_x": F.DLON, "scalar_y": -F.DLAT, "width": F.MAP_W, "height": F.MAP_H}
+    else:                                              # SatDump 1.1 style
+        conf = {"type": "equirectangular", "tl_lon": F.LON0, "tl_lat": F.LAT1,
+                "br_lon": round(lon1, 6), "br_lat": round(lat0, 6)}
+    return {"width": F.MAP_W, "height": F.MAP_H, "config": conf,
+            "draw_map_overlay": False, "draw_cities_overlay": False, "draw_qth_overlay": False,
+            "draw_shores_overlay": False, "draw_latlon_overlay": False}
+
+
 def extra_composites(cfg_path):
     """One helper picture from the 3.8 um infrared (channel 4), the only infrared the Meteors
     are sending at the moment: the raw channel, geometry-corrected, with and without borders
@@ -124,7 +143,18 @@ def extra_composites(cfg_path):
     (azpi_rain.py, azpi_enhance.py); the helper itself is never posted."""
     entry = {"equation": "ch4", "geo_correct": True, "autogen": True}
     entry.update(overlay_keys())
-    return {"AZ IR38 Raw": entry}
+    out = {"AZ IR38 Raw": entry}
+    # the natural-colour picture laid flat on the Big Picture map's grid, clean (no labels):
+    # the map stitcher drops it straight in, using SatDump's own accurate placement
+    cfg = load_jsonc(cfg_path)
+    comps = cfg.get("viewer", {}).get("instruments", {}).get("msu_mr", {}).get("rgb_composites", {})
+    src = comps.get("221") or comps.get("AVHRR 221 False Color")
+    if src:
+        m = {k: v for k, v in src.items() if k not in ("project", "description") and "overlay" not in k}
+        m.update({"autogen": True, "geo_correct": True, "draw_map_overlay": False, "draw_cities_overlay": False,
+                  "draw_qth_overlay": False, "project": map_grid_config(open(cfg_path, encoding="utf-8").read())})
+        out["AZ 221 Map"] = m
+    return out
 
 
 def main():
@@ -183,6 +213,10 @@ def main():
     comps = updated.get("viewer", {}).get("instruments", {}).get("msu_mr", {}).get("rgb_composites", {})
     for name in STALE:
         comps.pop(name, None)
+    fresh = diff["viewer"]["instruments"].get("msu_mr", {}).get("rgb_composites", {})
+    for name in ("AZ 221 Map", "AZ IR38 Raw"):         # our helpers: always written whole, never merged
+        if name in fresh:
+            comps[name] = fresh[name]
     if DRY:
         print(f"\nWould turn on borders + city names for {count} picture types in {path}")
         print(json.dumps(diff, indent=1)[:3000])

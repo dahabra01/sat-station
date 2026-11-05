@@ -75,7 +75,7 @@ MIN_ROWS = 24                # shortest stretch of clean rows worth placing
 RE = 6371.0
 E2 = 0.00669438
 DUBAI = dt.timezone(dt.timedelta(hours=4))
-VERSION = 4                  # bump to rebuild every layer after a change to the method
+VERSION = 7                  # bump to rebuild every layer after a change to the method
 
 ARGS = sys.argv[1:]
 
@@ -133,15 +133,16 @@ def to_latlon(p):
     return lat, (lon + 180) % 360 - 180
 
 
-def grid_latlon(sat, row_times, u, half_km):
-    """lat/lon of every (row, column). u runs -1 (west edge) .. +1 (east edge)."""
+def grid_latlon(sat, row_times, u, half_km, off_km=0.0):
+    """lat/lon of every (row, column). u runs -1 (west edge) .. +1 (east edge).
+    off_km shifts the whole swath sideways (the satellite flies leaning slightly to one side)."""
     P = ecef_unit(sat, row_times)
     V = ecef_unit(sat, row_times + 1.0) - ecef_unit(sat, row_times - 1.0)
     E = np.cross(V, P)
     E /= np.linalg.norm(E, axis=1, keepdims=True)
     east = np.stack([-P[:, 1], P[:, 0], np.zeros(len(P))], 1)
     E *= np.sign(np.sum(E * east, 1))[:, None]       # pictures are north-up, so columns run west->east
-    a = (np.asarray(u, float) * half_km / RE)[None, :, None]
+    a = ((np.asarray(u, float) * half_km + off_km) / RE)[None, :, None]
     return to_latlon(P[:, None, :] * np.cos(a) + E[:, None, :] * np.sin(a))
 
 
@@ -234,31 +235,40 @@ def has_map_lines(entry):
     return entry.get("from") != "home-base"
 
 
-def fit_score(sat, obs, rows, t_top, step, direction):
+def fit_score(sat, obs, rows, t_top, step, direction, hw=None, off=0.0, band=False):
+    """Agreement (0.5 = chance, 1 = perfect) between the picture's land/sea and the coastline map.
+    band=True scores only a strip either side of the coastline: much more sensitive to shifts of
+    a few km, used to fine-tune each pass's geometry."""
     cols = obs.shape[1]
     u = (np.arange(cols) + 0.5) / cols * 2 - 1
-    lat, lon = grid_latlon(sat, t_top + direction * rows * step, u, HALF_SWATH_KM)
+    lat, lon = grid_latlon(sat, t_top + direction * rows * step, u, hw or HALF_SWATH_KM, off)
     pred = land_mask(lat, lon)
     o = obs[rows]
     m = (o != 0) & ~inland_water(lat, lon)
+    if band:
+        from scipy.ndimage import binary_dilation
+        edge = np.zeros_like(pred)
+        edge[1:] |= pred[1:] != pred[:-1]
+        edge[:, 1:] |= pred[:, 1:] != pred[:, :-1]
+        m &= binary_dilation(edge, iterations=4)
     sea, land = m & (o < 0), m & (o > 0)
     if sea.sum() < 25 or land.sum() < 25:
         return -1.0
     return float(0.5 * ((~pred[sea]).mean() + pred[land].mean()))
 
 
-def place_stretch(sat, obs, r0, r1, t_guess, step, direction, span):
+def place_stretch(sat, obs, r0, r1, t_guess, step, direction, span, hw=None, off=0.0):
     """Find the time of a stretch's first row by lining its coasts up with the map."""
     D = 3
     o = obs[r0:r1:D, ::D]
     rows = np.arange(o.shape[0])
     best = (-1.0, t_guess)
     for t in np.arange(t_guess - span, t_guess + span + 0.1, 4.0):
-        s = fit_score(sat, o, rows, t, step * D, direction)
+        s = fit_score(sat, o, rows, t, step * D, direction, hw, off)
         if s > best[0]:
             best = (s, t)
     for t in np.arange(best[1] - 4, best[1] + 4.1, 0.5):
-        s = fit_score(sat, o, rows, t, step * D, direction)
+        s = fit_score(sat, o, rows, t, step * D, direction, hw, off)
         if s > best[0]:
             best = (s, t)
     return best
@@ -353,21 +363,63 @@ def locate(entry, rgb, tles):
                 best = (s, t)
         t_top = best[1]
 
+    # The picture's scale (seconds per row), its width on the ground and a small sideways lean
+    # differ from pass to pass; a few percent off moves coasts by tens of km. Fit them on the
+    # longest stretch, then use them for the whole pass.
+    hw, off = HALF_SWATH_KM, 0.0
+    runs = sorted(stretches(bad), key=lambda r: r[1] - r[0], reverse=True)
+    if runs and runs[0][1] - runs[0][0] >= 120:
+        r0, r1 = runs[0]
+        D = 2
+        o = obs[r0:r1:D, ::D]
+        rows = np.arange(o.shape[0])
+        mid = (r1 - r0) / 2
+        # where the stretch sits now: the log's timing, nudged by a quick coastline fit
+        t_start = place_stretch(sat, obs, r0, r1, t_top + direction * r0 * step, step, direction,
+                                span=16 if win else 40)[1]
+        t_mid = t_start + direction * mid * step                          # time of the stretch's middle row
+
+        def score(st, dt_, w, f):
+            return fit_score(sat, o, rows, t_mid + dt_ - direction * mid * st, st * D, direction, w, f, band=True)
+
+        base = score(step, 0.0, hw, off)
+        g = (base, step, 0.0, hw, off)
+        for st in np.arange(step * 0.94, step * 1.0601, step * 0.01):        # scale and timing
+            for dt_ in np.arange(-12, 12.1, 3.0):
+                sc = score(st, dt_, hw, off)
+                if sc > g[0]:
+                    g = (sc, st, dt_, hw, off)
+        for _ in range(2):                                                    # width and sideways lean
+            for w in np.arange(g[3] - 60, g[3] + 61, 15):
+                for f in np.arange(g[4] - 45, g[4] + 46, 7.5):
+                    for dt_ in (g[2] - 2, g[2], g[2] + 2):
+                        sc = score(g[1], dt_, w, f)
+                        if sc > g[0]:
+                            g = (sc, g[1], dt_, w, f)
+            for st in np.arange(g[1] * 0.99, g[1] * 1.0101, g[1] * 0.0025):  # fine scale
+                for dt_ in np.arange(g[2] - 2, g[2] + 2.1, 1.0):
+                    sc = score(st, dt_, g[3], g[4])
+                    if sc > g[0]:
+                        g = (sc, st, dt_, g[3], g[4])
+        if g[0] - base > 0.01:
+            step, hw, off = g[1], g[3], g[4]
+            t_top = t_mid + g[2] - direction * (r0 + mid) * step         # re-anchor the top row
+
     placed = []
     for r0, r1 in stretches(bad):
         t_pred = t_top + direction * r0 * step
         D = 3
         o = obs[r0:r1:D, ::D]
         rows = np.arange(o.shape[0])
-        s_pred = fit_score(sat, o, rows, t_pred, step * D, direction)
-        s, t0 = place_stretch(sat, obs, r0, r1, t_pred, step, direction, span=16 if win else 40)
+        s_pred = fit_score(sat, o, rows, t_pred, step * D, direction, hw, off)
+        s, t0 = place_stretch(sat, obs, r0, r1, t_pred, step, direction, span=16 if win else 40, hw=hw, off=off)
         if s >= MIN_FIT and s - s_pred > 0.01:
             placed.append((r0, r1, t0, s))             # coastlines line up: use the fine-tuned time
         elif win and (s_pred >= 0.5 or s_pred < 0):
             placed.append((r0, r1, t_pred, s_pred))    # too cloudy to check: trust the log's timing
         elif s >= MIN_FIT:
             placed.append((r0, r1, t0, s))
-    return (sat, step, direction, t_top, placed), None
+    return (sat, step, direction, t_top, placed, hw, off), None
 
 
 def row_times(H, step, direction, t_top, placed):
@@ -395,7 +447,7 @@ def build_layer(entry, tles):
     res, why = locate(entry, rgb, tles)
     if res is None:
         return None, why
-    sat, step, direction, t_top, placed = res
+    sat, step, direction, t_top, placed, hw, off = res
     H = len(rgb)
     code = "M2-3" if "M2-3" in entry["id"] else "M2-4"
     if not placed:
@@ -413,7 +465,7 @@ def build_layer(entry, tles):
         rs = np.arange(r0, r1, 2).tolist() + [r1 - 1]
         rs = np.array(rs, float)
         u = (np.array(cs, float) + 0.5) / W * 2 - 1
-        lat, lon = grid_latlon(sat, t0 + direction * (rs - r0) * step, u, HALF_SWATH_KM)
+        lat, lon = grid_latlon(sat, t0 + direction * (rs - r0) * step, u, hw, off)
         x, y = map_xy(lat, lon)
         rr, cc = np.meshgrid(rs, np.array(cs, float), indexing="ij")
         f = LinearNDInterpolator(np.stack([x.ravel(), y.ravel()], 1), np.stack([rr.ravel(), cc.ravel()], 1))
@@ -467,8 +519,54 @@ def build_layer(entry, tles):
         "direction": entry.get("direction"), "clean_share": round(clean_share, 3),
         "fit": round(float(np.mean([p[3] for p in placed if p[3] >= 0] or [0])), 3),
         "stretches": len(placed), "outlines": outlines, "version": VERSION,
+        "geometry": {"sec_per_row": round(step, 5), "half_swath_km": round(float(hw), 1), "sideways_km": round(float(off), 1)},
     }
     return (info, colour, have, rgb), None
+
+
+def layer_from_folder(entry, folder):
+    """Layer straight from SatDump's 'AZ 221 Map' picture, which SatDump already laid flat on
+    this map's exact grid using its own line timestamps and control points: no coastline guessing.
+    Returns True if the layer was made."""
+    import glob as _g
+    files = _g.glob(os.path.join(folder, "**", "*.png"), recursive=True)
+    proj = next((f for f in files if os.path.basename(f).lower().endswith("az_221_map_projected.png")), None)
+    flat = next((f for f in files if os.path.basename(f).lower().endswith("rgb_221_corrected.png")), None)
+    if not proj:
+        return False
+    im = Image.open(proj)
+    if im.size != (MAP_W, MAP_H):
+        say(f"{entry['id']}: SatDump's map picture is {im.size}, expected {(MAP_W, MAP_H)}; using the coastline fit")
+        return False
+    a = np.asarray(im.convert("RGBA"))
+    colour = a[..., :3].copy()
+    have = (a[..., 3] > 0) & (colour.mean(2) > 4)
+    if not have.any():
+        return False
+    clean_share = 1.0
+    thumb_src = None
+    if flat:
+        rgb = np.asarray(Image.open(flat).convert("RGB"))
+        clean_share = 1.0 - float(bad_rows(rgb).mean())
+        thumb_src = rgb
+    score, parts = rating(entry, clean_share)
+    ys, xs = np.nonzero(have)
+    corners = [(ys.min(), xs.min()), (ys.min(), xs.max()), (ys.max(), xs.max()), (ys.max(), xs.min())]
+    outline = [[round(LAT1 - (y + 0.5) * DLAT, 3), round(LON0 + (x + 0.5) * DLON, 3)] for y, x in corners]
+    code = "M2-3" if "M2-3" in entry["id"] else "M2-4"
+    info = {
+        "id": entry["id"], "sat": code, "start_utc": entry["start_utc"],
+        "start_local": entry.get("start_local"), "day": entry.get("day"),
+        "rating": score, "parts": parts, "peak_snr": entry.get("peak_snr"),
+        "lock_s": entry.get("lock_s"), "max_elev": entry.get("max_elev"),
+        "direction": entry.get("direction"), "clean_share": round(clean_share, 3),
+        "fit": 1.0, "stretches": 1, "outlines": [outline], "version": VERSION, "method": "satdump",
+    }
+    if thumb_src is None:
+        thumb_src = colour
+    save_layer(info, colour, have, thumb_src)
+    say(f"added {entry['id']} from SatDump's own map placement: rating {score}")
+    return True
 
 
 def save_layer(info, colour, have, rgb):
@@ -627,7 +725,8 @@ def update(site=None, force=False):
     skipped_file = os.path.join(WORK, "skipped.json")
     skipped = json.load(open(skipped_file)) if os.path.exists(skipped_file) else {}
     todo = [e for e in manifest.get("passes", [])
-            if (e["id"] not in done or done[e["id"]].get("version") != VERSION)
+            if (e["id"] not in done or (done[e["id"]].get("version") != VERSION
+                                        and done[e["id"]].get("method") != "satdump"))
             and skipped.get(e["id"], {}).get("version") != VERSION]
     changed = bool(remove) or force
     tles = load_tles() if todo else {}
