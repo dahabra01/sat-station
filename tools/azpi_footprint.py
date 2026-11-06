@@ -78,6 +78,7 @@ RE = 6371.0
 E2 = 0.00669438
 DUBAI = dt.timezone(dt.timedelta(hours=4))
 VERSION = 7                  # bump to rebuild every layer after a change to the method
+REPAIR_VERSION = 2           # bump to rebuild only the repaired layers (2: no stray lines outside the picture)
 
 ARGS = sys.argv[1:]
 DIRTY = False          # set when a layer was added outside update(); the next update() redraws the map
@@ -612,6 +613,15 @@ def layer_from_map_picture(entry):
     if a.shape[:2] != (MAP_H, MAP_W):
         return False
     have = a.mean(2) > 8
+    # the old labelled pictures also have borders, coastlines and city names drawn over the
+    # empty space around the pass: keep only the solid picture, not thin lines and text
+    from scipy.ndimage import binary_dilation, binary_opening, label
+    solid = binary_opening(have, iterations=4)
+    lab, n = label(solid)                              # bold city names survive that: drop small blobs
+    if n > 1:
+        sizes = np.bincount(lab.ravel())
+        solid = np.isin(lab, np.flatnonzero(sizes >= 5000)) & (lab > 0)
+    have &= binary_dilation(solid, iterations=4)
     if not have.any():
         return False
     span = None
@@ -629,6 +639,7 @@ def layer_from_map_picture(entry):
         "lock_s": entry.get("lock_s"), "max_elev": entry.get("max_elev"),
         "direction": entry.get("direction"), "clean_share": round(clean_share, 3),
         "fit": 1.0, "stretches": 1, "version": VERSION, "method": "repaired", "repaired": True,
+        "repair_v": REPAIR_VERSION,
         "outlines": [[[round(LAT1 - (y + 0.5) * DLAT, 3), round(LON0 + (x + 0.5) * DLON, 3)] for y, x in corners]],
     }
     save_layer(info, a.copy(), have, a[ys.min():ys.max() + 1, xs.min():xs.max() + 1])
@@ -798,7 +809,9 @@ def update(site=None, force=False):
     skipped = json.load(open(skipped_file)) if os.path.exists(skipped_file) else {}
     todo = [e for e in manifest.get("passes", [])
             if (e["id"] not in done or (done[e["id"]].get("version") != VERSION
-                                        and done[e["id"]].get("method") not in ("satdump", "repaired")))
+                                        and done[e["id"]].get("method") not in ("satdump", "repaired"))
+                or (e.get("plain_map") and done[e["id"]].get("method") == "repaired"
+                    and done[e["id"]].get("repair_v", 1) < REPAIR_VERSION))
             and (skipped.get(e["id"], {}).get("version") != VERSION or e.get("plain_map"))]
     changed = bool(remove) or force or DIRTY or "--compose" in ARGS
     by_id = {e["id"]: e for e in manifest.get("passes", [])}
