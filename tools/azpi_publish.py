@@ -37,6 +37,9 @@ Options:
                       question. It takes that day's place on the site and the daily
                       ask-first run won't swap it out. Home Wi-Fi only, like everything here.
   --take-down ID      remove one posted pass from the site (Home Base's Take down button)
+  --map-sync-only     only bring the Big Picture map up to date (tools/azpi_map_sync.py);
+                      every normal run does this too, after posting. Add --map-retry to try
+                      again passes it gave up on.
 """
 import datetime as dt
 import fcntl
@@ -555,6 +558,50 @@ def update_footprint(remove=None):
         say(f"footprint map skipped this time: {e.__class__.__name__}: {e}")
 
 
+def map_sync():
+    """Big Picture sync (tools/azpi_map_sync.py): every recorded pass that meets the standard goes
+    on the map, posted or not, decoded again by SatDump if only labelled pictures were kept.
+    Never blocks posting: anything that goes wrong is reported and tried again next run."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import azpi_footprint
+        import azpi_map_sync
+
+        def stats_for(start):
+            s = signal_stats(start)
+            return s if s["timeline"] else satdump_stats(start)
+
+        manifest = load_manifest(os.path.join(SITE, OUT_DIR, "captures.json"))
+        posted = [e["id"] for e in manifest.get("passes", [])]
+        added, report = azpi_map_sync.sync(SITE, find_passes(), stats_for, pass_geometry, DB,
+                                           posted_ids=posted, dry=DRY, retry="--map-retry" in ARGS, log=say)
+        for line in report:
+            say("map: " + line)
+        if DRY or not added:
+            return
+        azpi_footprint.update(SITE, force=True)
+        if NO_PUSH:
+            say("--no-push: map written, not sent")
+            return
+        git("add", "-A", FOOTPRINT_DIR)
+        r = git("commit", "-q", "-m", "Big Picture map: added " + ", ".join(added))
+        if r.returncode:
+            say("git commit failed: " + (r.stderr or r.stdout).strip())
+            return
+        r = git("push", "-q")
+        if r.returncode:
+            say("git push failed: " + r.stderr.strip())
+            return
+        lines = [ln for ln in report if ": added" in ln]
+        ntfy_send("AZPi: Big Picture map updated",
+                  f"{len(added)} pass{'es' if len(added) != 1 else ''} added to the map:\n" + "\n".join(lines),
+                  tags="world_map", click="https://sat.dahabra.com/footprint.html")
+    except ImportError as e:
+        say(f"map sync skipped, missing a Python part on the Pi ({e.name})")
+    except Exception as e:
+        say(f"map sync skipped this time: {e.__class__.__name__}: {e}")
+
+
 def post_entries(by_day, picks):
     """picks: list of (pass, stats). Each replaces whatever was posted for its day."""
     changed = []
@@ -1070,6 +1117,10 @@ def main():
             say("git pull failed: " + r.stderr.strip())
             return
 
+    if "--map-sync-only" in ARGS:
+        map_sync()
+        return
+
     manifest = load_manifest(os.path.join(SITE, OUT_DIR, "captures.json"))
     by_day = {e["day"]: e for e in manifest.get("passes", [])}
     all_passes = find_passes()
@@ -1078,6 +1129,7 @@ def main():
         ask_first(st, by_day, all_passes)
     else:
         auto_post(by_day, all_passes)
+    map_sync()                                  # every good pass onto the Big Picture, posted or not
 
 
 if __name__ == "__main__":

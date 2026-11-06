@@ -338,7 +338,8 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
     d.style.left = Math.min(fx * 100, 60) + "%"; d.style.top = Math.min(fy * 100, 70) + "%";
     d.innerHTML = '<img alt="" src="' + p.thumb + '"><div><b>' + satName(p.sat) + '</b><div class="ln">' + fmtDay(p) +
       '</div><div class="ln">Rating ' + p.rating + '/100 · holds ' + Math.round(p.share * 100) + '% of the map</div>' +
-      '<a href="' + p.link + '">See this pass →</a></div><button type="button" aria-label="Close">×</button>';
+      (p.link ? '<a href="' + p.link + '">See this pass →</a>' : '<div class="ln">Map only, not on Captures</div>') +
+      '</div><button type="button" aria-label="Close">×</button>';
     d.querySelector("button").onclick = function () { d.remove(); };
     $("stage").appendChild(d);
     document.querySelectorAll(".card").forEach(function (c) { c.classList.toggle("hl", c.dataset.id === p.id); });
@@ -362,7 +363,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
         '<div class="ln">' + fmtDay(p) + ' · ' + (p.peak_snr != null ? p.peak_snr + ' dB' : '') + '</div>' +
         '<span class="chip" style="color:' + col + '">' + holds + '</span>' +
         '<div class="bars">' + bars + '</div>' +
-        '<a class="more" href="' + p.link + '">See this pass →</a></div>';
+        (p.link ? '<a class="more" href="' + p.link + '">See this pass →</a>' : '<div class="ln">Map only, not on Captures</div>') + '</div>';
       box.appendChild(c);
     });
   }

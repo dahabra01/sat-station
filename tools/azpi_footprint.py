@@ -449,7 +449,8 @@ def build_layer(entry, tles):
         return None, "picture file missing"
     rgb = np.asarray(Image.open(path).convert("RGB"))
     W = rgb.shape[1]
-    rgb = rgb[: -int(round(W * 0.055))]               # leave out the watermark along the bottom
+    if not entry.get("no_watermark"):
+        rgb = rgb[: -int(round(W * 0.055))]           # leave out the watermark along the bottom
     res, why = locate(entry, rgb, tles)
     if res is None:
         return None, why
@@ -689,7 +690,7 @@ def better(new, old):
 def compose(layers):
     order = sorted(layers, key=lambda i: i["start_utc"])     # oldest first, as they came in
     mosaic = np.zeros((MAP_H, MAP_W, 3), np.uint8)
-    owner = np.zeros((MAP_H, MAP_W), np.uint8)               # 0 = nobody, else index+1
+    owner = np.zeros((MAP_H, MAP_W), np.uint16)              # 0 = nobody, else index+1
     for n, info in enumerate(order, start=1):
         z = np.load(os.path.join(WORK, "layers", info["id"] + ".npz"))
         y0, y1, x0, x1 = info["box"]
@@ -730,6 +731,11 @@ def write_site(order, mosaic, owner):
     area_rows = has.sum(1) * (DLON * 111.32 * np.cos(np.radians(lat))) * (DLAT * 110.57)
     passes = []
     keep = set()
+    try:                                                   # passes on the Captures page get a link
+        with open(os.path.join(SITE, "captures", "captures.json")) as fh:
+            posted = {e["id"] for e in json.load(fh).get("passes", [])}
+    except Exception:
+        posted = set()
     for n, info in enumerate(order, start=1):
         px = int((owner == n).sum())
         thumb = f"footprint/thumbs/{info['id']}.jpg"
@@ -740,7 +746,7 @@ def write_site(order, mosaic, owner):
         p = {k: info.get(k) for k in ("id", "sat", "start_utc", "start_local", "day", "rating", "parts",
                                       "peak_snr", "lock_s", "max_elev", "direction", "outlines", "repaired")}
         p.update(index=n, thumb=thumb, share=round(px / max(1, has.sum()), 4),
-                 on_map=px > 0, link=f"captures.html#{info['id']}")
+                 on_map=px > 0, link=f"captures.html#{info['id']}" if info["id"] in posted else None)
         passes.append(p)
     for f in os.listdir(os.path.join(out, "thumbs")):
         if f not in keep:
