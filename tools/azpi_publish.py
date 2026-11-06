@@ -583,14 +583,19 @@ def map_sync():
                       "These good passes couldn't go on the map:\n" + "\n".join(gave_up) +
                       "\nNothing for you to do: send this to Claude and it gets fixed for the next pass.",
                       tags="warning")
-        if DRY or not added:
+        if DRY:
             return
-        azpi_footprint.update(SITE, force=True)
+        # redraw if passes were added, or a layer is due a rebuild by itself (e.g. a repair fix)
+        if not azpi_footprint.update(SITE, force=bool(added)):
+            return
         if NO_PUSH:
             say("--no-push: map written, not sent")
             return
         git("add", "-A", FOOTPRINT_DIR)
-        r = git("commit", "-q", "-m", "Big Picture map: added " + ", ".join(added))
+        if not git("status", "--porcelain", FOOTPRINT_DIR).stdout.strip():
+            return
+        r = git("commit", "-q", "-m", ("Big Picture map: added " + ", ".join(added)) if added
+                else "Big Picture map: rebuilt")
         if r.returncode:
             say("git commit failed: " + (r.stderr or r.stdout).strip())
             return
@@ -599,6 +604,8 @@ def map_sync():
             say("git push failed: " + r.stderr.strip())
             return
         lines = [ln for ln in report if ": added" in ln]
+        if not added:
+            return
         ntfy_send("AZPi: Big Picture map updated",
                   f"{len(added)} pass{'es' if len(added) != 1 else ''} added to the map:\n" + "\n".join(lines),
                   tags="world_map", click="https://sat.dahabra.com/footprint.html")
