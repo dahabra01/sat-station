@@ -655,9 +655,10 @@ def ask(st, picks, new_items, came_back):
     title = f"AZPi: post {len(picks)} new capture{'s' if len(picks) != 1 else ''}?"
     asked_at = time.time()
     if not ntfy_send(title, msg, tags="satellite,camera", priority="high", actions=actions,
-                     click=PORTAL, attach_path=preview):
+                     click=f"https://sat.dahabra.com/answer.html#{ntfy_topic()}", attach_path=preview):
         return False
     say(f"asked the Captain about {', '.join(p['id'] for p, _ in picks)} (answer code {token})")
+    say("you can also answer at sat.dahabra.com/answer.html (the link with your channel name after the #)")
     st["pending"] = {"token": token, "asked_at": asked_at,
                      "pass_ids": [p["id"] for p, _ in picks],
                      "seen_ids": [p["id"] for p, _ in new_items]}

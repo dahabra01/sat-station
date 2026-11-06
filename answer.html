@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Station Questions · Capt. Abu Zaid Sat Station</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#06101c">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* The station's private question page. The channel name lives only in the link's # part,
+   which the browser never sends to any server, and in this browser's own storage. */
+:root{
+  --night:#06101c;--deep:#0b1a2c;--rule:#1f3a57;--cloud:#eef3f8;--mist:#9db0c6;
+  --sand:#e8b45c;--signal:#5ee1e6;--ok:#6fdc9c;--warn:#f0a35a;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--night);color:var(--cloud)}
+body{margin:0;font-family:var(--f-body);font-size:17px;line-height:1.55}
+main{max-width:640px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-left)) 48px max(16px,env(safe-area-inset-right))}
+.eyebrow{font:600 12px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--sand)}
+h1{font:900 clamp(40px,10vw,64px)/.9 var(--f-display);text-transform:uppercase;margin:8px 0 18px}
+p{margin:0 0 12px}
+.muted{color:var(--mist)}
+.card{background:var(--deep);border:1px solid var(--rule);border-radius:14px;padding:18px;margin-top:18px}
+.card h2{font:800 26px/1 var(--f-display);text-transform:uppercase;margin:0 0 10px}
+.when{font:400 13px var(--f-mono);color:var(--mist);margin-bottom:10px}
+pre{white-space:pre-wrap;font:15px/1.5 var(--f-body);margin:0 0 14px}
+img.prev{display:block;width:100%;border-radius:10px;margin:0 0 14px;background:#000}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+button{font:700 17px var(--f-body);border-radius:10px;padding:12px 20px;border:1px solid var(--rule);cursor:pointer;background:transparent;color:var(--cloud)}
+button.go{background:var(--ok);border-color:var(--ok);color:#04220f}
+button:disabled{opacity:.5;cursor:default}
+.state{font:600 13px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;margin-top:12px}
+.state.done{color:var(--ok)}.state.wait{color:var(--warn)}
+input{font:16px var(--f-mono);width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--rule);background:var(--night);color:var(--cloud);margin:6px 0 12px}
+a{color:var(--signal)}
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Station questions</div>
+  <h1>Post this pass?</h1>
+  <p class="muted" id="intro">The station asks before anything goes public. Its questions show up here as well as on your phone, and you can answer from either one.</p>
+
+  <section class="card" id="setup" hidden>
+    <h2>Connect this page</h2>
+    <p>Type the station's channel name (the <code>NTFY_TOPIC</code> on the Pi). It stays in this browser and is never put on the website.</p>
+    <input id="topic" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="channel name">
+    <div class="btns"><button class="go" id="save">Connect</button></div>
+  </section>
+
+  <div id="list"></div>
+  <p class="muted" id="status"></p>
+</main>
+<script>
+const BASE = "https://ntfy.sh";
+let topic = decodeURIComponent((location.hash || "").slice(1)).trim();
+try { if (topic) localStorage.setItem("azpi_topic", topic); else topic = localStorage.getItem("azpi_topic") || ""; } catch (e) {}
+const $ = id => document.getElementById(id);
+const okName = t => /^[\w-]{1,64}$/.test(t);
+
+function lines(url) {
+  return fetch(url, {cache: "no-store"}).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(t => t.split("\n").filter(Boolean).map(l => { try { return JSON.parse(l); } catch (e) { return null; } })
+    .filter(m => m && m.event === "message"));
+}
+function tokenOf(m) {
+  for (const a of (m.actions || [])) {
+    const w = (a.body || "").trim().split(/\s+/);
+    if (w.length === 2 && w[0] === "post") return w[1];
+  }
+  return null;
+}
+function when(t) {
+  return new Date(t * 1000).toLocaleString("en-GB", {timeZone: "Asia/Dubai", weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"}) + " Dubai";
+}
+
+async function load() {
+  if (!okName(topic)) { $("setup").hidden = false; $("status").textContent = ""; return; }
+  $("setup").hidden = true;
+  $("status").textContent = "Checking for questions…";
+  try {
+    const [qs, replies] = await Promise.all([
+      lines(`${BASE}/${topic}/json?poll=1&since=24h`),
+      lines(`${BASE}/${topic}-reply/json?poll=1&since=24h`)]);
+    const asks = qs.filter(m => tokenOf(m)).sort((a, b) => b.time - a.time).slice(0, 3);
+    const answered = {};
+    for (const r of replies) {
+      const w = (r.message || "").trim().toLowerCase().split(/\s+/);
+      if (w.length === 2 && (w[0] === "post" || w[0] === "skip")) answered[w[1]] = w[0];
+    }
+    const box = $("list"); box.innerHTML = "";
+    if (!asks.length) { $("status").textContent = "No questions from the station in the last day. This page checks again every minute."; return; }
+    $("status").textContent = "Checks again every minute.";
+    asks.forEach((m, i) => {
+      const tok = tokenOf(m), done = answered[tok];
+      const c = document.createElement("section"); c.className = "card";
+      const h = document.createElement("h2"); h.textContent = (m.title || "New capture").replace(/^AZPi:\s*/, ""); c.append(h);
+      const w = document.createElement("div"); w.className = "when"; w.textContent = "Asked " + when(m.time) + " · code " + tok; c.append(w);
+      if (m.attachment && m.attachment.url) { const im = document.createElement("img"); im.className = "prev"; im.alt = "Preview of the pass"; im.src = m.attachment.url; c.append(im); }
+      const pre = document.createElement("pre"); pre.textContent = (m.message || "").replace(/\\n/g, "\n"); c.append(pre);
+      const st = document.createElement("div");
+      if (done) { st.className = "state done"; st.textContent = done === "post" ? "Answered: post it. The station will put it up within a few minutes." : "Answered: not now."; }
+      else if (i > 0) { st.className = "state"; st.textContent = "Older question, replaced by the one above."; }
+      else {
+        const b = document.createElement("div"); b.className = "btns";
+        const mk = (label, word, cls) => { const x = document.createElement("button"); x.textContent = label; if (cls) x.className = cls;
+          x.onclick = () => answer(word, tok, b, st); return x; };
+        b.append(mk("Post it", "post", "go"), mk("Not now", "skip"));
+        c.append(b);
+        st.className = "state wait"; st.textContent = "Waiting for your answer";
+      }
+      c.append(st); box.append(c);
+    });
+  } catch (e) {
+    $("status").textContent = "Couldn't reach the station's channel just now. Check the name, or try again in a minute.";
+  }
+}
+async function answer(word, tok, btns, st) {
+  btns.querySelectorAll("button").forEach(b => b.disabled = true);
+  st.className = "state"; st.textContent = "Sending…";
+  try {
+    const r = await fetch(`${BASE}/${topic}-reply`, {method: "POST", body: `${word} ${tok}`});
+    if (!r.ok) throw new Error(r.status);
+    st.className = "state done";
+    st.textContent = word === "post" ? "Sent. The station will post it within a few minutes." : "Sent: not now.";
+    btns.remove();
+  } catch (e) {
+    st.className = "state wait"; st.textContent = "Didn't go through. Try again.";
+    btns.querySelectorAll("button").forEach(b => b.disabled = false);
+  }
+}
+$("save").onclick = () => { const t = $("topic").value.trim(); if (!okName(t)) { $("topic").focus(); return; }
+  topic = t; try { localStorage.setItem("azpi_topic", t); } catch (e) {} history.replaceState(null, "", "#" + encodeURIComponent(t)); load(); };
+load(); setInterval(load, 60000);
+</script>
+</body>
+</html>
