@@ -577,6 +577,12 @@ def map_sync():
                                            posted_ids=posted, dry=DRY, retry="--map-retry" in ARGS, log=say)
         for line in report:
             say("map: " + line)
+        gave_up = [ln for ln in report if ": gave up" in ln]
+        if gave_up and not DRY:                 # tell the Captain once, so nobody has to go looking
+            ntfy_send("AZPi: pass kept off the Big Picture",
+                      "These good passes couldn't go on the map:\n" + "\n".join(gave_up) +
+                      "\nNothing for you to do: send this to Claude and it gets fixed for the next pass.",
+                      tags="warning")
         if DRY or not added:
             return
         azpi_footprint.update(SITE, force=True)

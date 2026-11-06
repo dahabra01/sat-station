@@ -269,7 +269,8 @@ def sync(site, image_passes, stats_for, geometry_for, db, posted_ids=(), dry=Fal
                 why = "no clean picture and no raw data kept for it"
                 rec = {"why": why, "tries": rec.get("tries", 0) + 1}
                 st[pid] = rec
-                report.append(f"{label}: stays off for now, {why} (look {rec['tries']} of {MAX_TRIES})")
+                report.append(f"{label}: gave up, {why}" if rec["tries"] >= MAX_TRIES
+                              else f"{label}: stays off for now, {why} (look {rec['tries']} of {MAX_TRIES})")
                 continue
             if dry:
                 report.append(f"{label}: would decode it again from {raw} and add it")
@@ -284,7 +285,8 @@ def sync(site, image_passes, stats_for, geometry_for, db, posted_ids=(), dry=Fal
             if why:
                 rec = {"why": why, "tries": rec.get("tries", 0) + 1}
                 st[pid] = rec
-                report.append(f"{label}: SatDump failed ({why}), try {rec['tries']} of {MAX_TRIES}")
+                report.append(f"{label}: gave up, SatDump failed ({why})" if rec["tries"] >= MAX_TRIES
+                              else f"{label}: SatDump failed ({why}), try {rec['tries']} of {MAX_TRIES}")
                 continue
             grid, flat = products_in(work_dir)
         elif dry:
@@ -316,7 +318,8 @@ def sync(site, image_passes, stats_for, geometry_for, db, posted_ids=(), dry=Fal
         if not ok:
             rec = {"why": why or "couldn't place it on the map", "tries": rec.get("tries", 0) + 1}
             st[pid] = rec
-            report.append(f"{label}: couldn't place it ({rec['why']}), try {rec['tries']} of {MAX_TRIES}")
+            report.append(f"{label}: gave up, couldn't place it ({rec['why']})" if rec["tries"] >= MAX_TRIES
+                          else f"{label}: couldn't place it ({rec['why']}), try {rec['tries']} of {MAX_TRIES}")
             continue
         info = next(i for i in F.load_layers() if i["id"] == pid)
         if info["rating"] < MIN_MAP_RATING:
