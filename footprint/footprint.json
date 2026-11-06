@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-06T08:45:24+00:00",
+ "updated": "2026-11-06T09:15:08+00:00",
  "rule": "A pass only replaces ground already covered if its rating is the same or higher; same rating, the newer pass wins. Uncovered ground is filled by any pass.",
  "bounds": {
   "lon0": 25.0,
@@ -9,7 +9,7 @@
   "width": 1735,
   "height": 1714
  },
- "area_km2": 19316402,
+ "area_km2": 19248364,
  "pass_count": 6,
  "latest": "METEOR-M2-3-20261106-061907",
  "passes": [
@@ -107,7 +107,7 @@
    "repaired": null,
    "index": 6,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261106-061907.jpg",
-   "share": 0.0173,
+   "share": 0.0175,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261106-061907"
   },
@@ -151,7 +151,7 @@
    "repaired": null,
    "index": 5,
    "thumb": "footprint/thumbs/METEOR-M2-4-20261105-101833.jpg",
-   "share": 0.6871,
+   "share": 0.6895,
    "on_map": true,
    "link": "captures.html#METEOR-M2-4-20261105-101833"
   },
@@ -195,7 +195,7 @@
    "repaired": null,
    "index": 4,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261104-052522.jpg",
-   "share": 0.0187,
+   "share": 0.0188,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261104-052522"
   },
@@ -283,7 +283,7 @@
    "repaired": null,
    "index": 2,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261102-061201.jpg",
-   "share": 0.1509,
+   "share": 0.1515,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261102-061201"
   },
@@ -307,27 +307,27 @@
    "outlines": [
     [
      [
-      43.062,
-      27.916
+      42.642,
+      28.958
      ],
      [
-      43.062,
-      71.323
+      42.642,
+      65.839
      ],
      [
-      6.137,
-      71.323
+      6.417,
+      65.839
      ],
      [
-      6.137,
-      27.916
+      6.417,
+      28.958
      ]
     ]
    ],
    "repaired": true,
    "index": 1,
    "thumb": "footprint/thumbs/METEOR-M2-4-20261029-110952.jpg",
-   "share": 0.1257,
+   "share": 0.1225,
    "on_map": true,
    "link": "captures.html#METEOR-M2-4-20261029-110952"
   }
