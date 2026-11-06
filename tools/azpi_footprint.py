@@ -73,6 +73,7 @@ STEP_800 = 0.545             # seconds per picture row at 800 px wide (fitted on
 HALF_SWATH_KM = 1430.0       # half the width of a 'spread' picture on the ground
 MIN_FIT = 0.80               # how well a stretch must line up with the coastline map to be used
 MIN_ROWS = 24                # shortest stretch of clean rows worth placing
+MIN_ROWS_TIMED = 4           # ...when SatDump's own line timing carries it (see locate)
 RE = 6371.0
 E2 = 0.00669438
 DUBAI = dt.timezone(dt.timedelta(hours=4))
@@ -217,13 +218,14 @@ def bad_rows(rgb):
     return w
 
 
-def stretches(bad):
+def stretches(bad, min_rows=None):
+    min_rows = min_rows or MIN_ROWS
     out, start = [], None
     for i, b in enumerate(list(bad) + [True]):
         if not b and start is None:
             start = i
         elif b and start is not None:
-            if i - start >= MIN_ROWS:
+            if i - start >= min_rows:
                 out.append((start, i))
             start = None
     return out
@@ -425,6 +427,17 @@ def locate(entry, rgb, tles):
             placed.append((r0, r1, t_pred, s_pred))    # too cloudy to check: trust the log's timing
         elif s >= MIN_FIT:
             placed.append((r0, r1, t0, s))
+    # A picture SatDump decoded from the raw data keeps exact time across dropouts (blank rows
+    # stand in for lost lines). So once a stretch is pinned by its coastlines, every other clean
+    # stretch, however thin or cloudy, sits at a known time from it: place those too.
+    if entry.get("timed") and placed:
+        anchors = sorted(placed)
+        for r0, r1 in stretches(bad, MIN_ROWS_TIMED):
+            if any(r0 < a1 and r1 > a0 for a0, a1, _, _ in anchors):
+                continue
+            a = min(anchors, key=lambda p: min(abs(p[0] - r1), abs(p[1] - r0)))
+            placed.append((r0, r1, a[2] + direction * (r0 - a[0]) * step, -1.0))
+        placed.sort()
     return (sat, step, direction, t_top, placed, hw, off), None
 
 

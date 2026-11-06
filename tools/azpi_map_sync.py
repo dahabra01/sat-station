@@ -68,6 +68,8 @@ RAW_DIRS = [d for d in os.environ.get("AZPI_RAW_DIRS", "").split(":") if d] or [
     os.path.expanduser("~/raspberry-noaa-v2/tmp")]
 DUBAI = dt.timezone(dt.timedelta(hours=4))
 SAME_PASS_S = 180             # two records this close together are the same pass
+SYNC_VERSION = 2              # bump to redo passes this sync placed with an older method
+                              # (2: thin and cloudy stretches placed by SatDump's line timing)
 
 
 def _say(msg):
@@ -231,8 +233,17 @@ def sync(site, image_passes, stats_for, geometry_for, db, posted_ids=(), dry=Fal
     layers = F.load_layers()
     now = time.time()
     cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=MAP_DAYS)
+    # passes this sync placed by the coastline fit with an older method get done again
+    # (the old layer stays on the map until the new one is ready, then gets overwritten)
+    redo = set()
+    for pid, rec in list(st.items()):
+        if rec.get("how", "").startswith("coastline") and rec.get("v", 1) < SYNC_VERSION:
+            redo.add(pid)
+            st[pid] = {"redo": True, "tries": 0}
+            say(f"{pid}: placing it again with the newer method")
+    mapped = [i for i in layers if i["id"] not in redo]
     rows = [r for r in all_recorded(image_passes)
-            if r["start"] >= cutoff and now - r["newest"] > SETTLE_S and not on_map(r, layers)]
+            if r["start"] >= cutoff and now - r["newest"] > SETTLE_S and not on_map(r, mapped)]
     added, report, worked = [], [], 0
     tles = None
     for row in rows:
@@ -306,6 +317,7 @@ def sync(site, image_passes, stats_for, geometry_for, db, posted_ids=(), dry=Fal
         if not ok:                                        # patchy picture: clean stretches only
             entry["plain"] = plain                         # absolute path: the stitcher reads it as is
             entry["no_watermark"] = True                   # our own copy: nothing to crop off the bottom
+            entry["timed"] = True                          # SatDump's picture: time runs on across gaps
             tles = tles or F.load_tles()
             try:
                 res, why = F.build_layer(entry, tles)
@@ -329,7 +341,7 @@ def sync(site, image_passes, stats_for, geometry_for, db, posted_ids=(), dry=Fal
             report.append(f"{label}: stays off, {why}")
             continue
         st[pid] = {"added": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
-                   "rating": info["rating"], "how": how, "final": True}
+                   "rating": info["rating"], "how": how, "final": True, "v": SYNC_VERSION}
         added.append(pid)
         report.append(f"{label}: added, rating {info['rating']} ({how})")
     if not dry:
