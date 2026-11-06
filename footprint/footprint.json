@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-06T07:46:02+00:00",
+ "updated": "2026-11-06T08:30:24+00:00",
  "rule": "A pass only replaces ground already covered if its rating is the same or higher; same rating, the newer pass wins. Uncovered ground is filled by any pass.",
  "bounds": {
   "lon0": 25.0,
@@ -9,10 +9,90 @@
   "width": 1735,
   "height": 1714
  },
- "area_km2": 18968803,
- "pass_count": 5,
- "latest": "METEOR-M2-4-20261105-101833",
+ "area_km2": 19250940,
+ "pass_count": 6,
+ "latest": "METEOR-M2-3-20261106-061907",
  "passes": [
+  {
+   "id": "METEOR-M2-3-20261106-061907",
+   "sat": "M2-3",
+   "start_utc": "2026-11-06T06:19:07+00:00",
+   "start_local": "10:19",
+   "day": "2026-11-06",
+   "rating": 53,
+   "parts": {
+    "signal": 28,
+    "clean": 14,
+    "length": 8,
+    "height": 3
+   },
+   "peak_snr": 15.1,
+   "lock_s": 280,
+   "max_elev": 29,
+   "direction": "southbound",
+   "outlines": [
+    [
+     [
+      28.544,
+      30.071
+     ],
+     [
+      22.775,
+      57.885
+     ],
+     [
+      17.236,
+      55.991
+     ],
+     [
+      22.916,
+      29.288
+     ]
+    ],
+    [
+     [
+      22.161,
+      29.175
+     ],
+     [
+      16.49,
+      55.754
+     ],
+     [
+      15.464,
+      55.435
+     ],
+     [
+      21.123,
+      29.017
+     ]
+    ],
+    [
+     [
+      20.43,
+      28.909
+     ],
+     [
+      14.779,
+      55.226
+     ],
+     [
+      13.814,
+      54.937
+     ],
+     [
+      19.455,
+      28.755
+     ]
+    ]
+   ],
+   "repaired": null,
+   "index": 6,
+   "thumb": "footprint/thumbs/METEOR-M2-3-20261106-061907.jpg",
+   "share": 0.0142,
+   "on_map": true,
+   "link": "captures.html#METEOR-M2-3-20261106-061907"
+  },
   {
    "id": "METEOR-M2-4-20261105-101833",
    "sat": "M2-4",
@@ -53,7 +133,7 @@
    "repaired": null,
    "index": 5,
    "thumb": "footprint/thumbs/METEOR-M2-4-20261105-101833.jpg",
-   "share": 0.6992,
+   "share": 0.6893,
    "on_map": true,
    "link": "captures.html#METEOR-M2-4-20261105-101833"
   },
@@ -97,7 +177,7 @@
    "repaired": null,
    "index": 4,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261104-052522.jpg",
-   "share": 0.019,
+   "share": 0.0188,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261104-052522"
   },
@@ -185,7 +265,7 @@
    "repaired": null,
    "index": 2,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261102-061201.jpg",
-   "share": 0.1536,
+   "share": 0.1514,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261102-061201"
   },
@@ -229,7 +309,7 @@
    "repaired": true,
    "index": 1,
    "thumb": "footprint/thumbs/METEOR-M2-4-20261029-110952.jpg",
-   "share": 0.1279,
+   "share": 0.1261,
    "on_map": true,
    "link": "captures.html#METEOR-M2-4-20261029-110952"
   }
