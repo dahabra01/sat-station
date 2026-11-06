@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-05T14:24:13+00:00",
+ "updated": "2026-11-06T07:46:02+00:00",
  "rule": "A pass only replaces ground already covered if its rating is the same or higher; same rating, the newer pass wins. Uncovered ground is filled by any pass.",
  "bounds": {
   "lon0": 25.0,
@@ -9,8 +9,8 @@
   "width": 1735,
   "height": 1714
  },
- "area_km2": 16637718,
- "pass_count": 4,
+ "area_km2": 18968803,
+ "pass_count": 5,
  "latest": "METEOR-M2-4-20261105-101833",
  "passes": [
   {
@@ -50,9 +50,10 @@
      ]
     ]
    ],
-   "index": 4,
+   "repaired": null,
+   "index": 5,
    "thumb": "footprint/thumbs/METEOR-M2-4-20261105-101833.jpg",
-   "share": 0.7902,
+   "share": 0.6992,
    "on_map": true,
    "link": "captures.html#METEOR-M2-4-20261105-101833"
   },
@@ -93,9 +94,10 @@
      ]
     ]
    ],
-   "index": 3,
+   "repaired": null,
+   "index": 4,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261104-052522.jpg",
-   "share": 0.0215,
+   "share": 0.019,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261104-052522"
   },
@@ -136,9 +138,10 @@
      ]
     ]
    ],
-   "index": 2,
+   "repaired": null,
+   "index": 3,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261103-054836.jpg",
-   "share": 0.0671,
+   "share": 0.0002,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261103-054836"
   },
@@ -148,11 +151,11 @@
    "start_utc": "2026-11-02T06:12:01+00:00",
    "start_local": "10:12",
    "day": "2026-11-02",
-   "rating": 37,
+   "rating": 74,
    "parts": {
-    "signal": 0,
+    "signal": 26,
     "clean": 33,
-    "length": 0,
+    "length": 11,
     "height": 4
    },
    "peak_snr": 0.0,
@@ -179,11 +182,56 @@
      ]
     ]
    ],
-   "index": 1,
+   "repaired": null,
+   "index": 2,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261102-061201.jpg",
-   "share": 0.1212,
+   "share": 0.1536,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261102-061201"
+  },
+  {
+   "id": "METEOR-M2-4-20261029-110952",
+   "sat": "M2-4",
+   "start_utc": "2026-10-29T11:09:52+00:00",
+   "start_local": "15:09",
+   "day": "2026-10-29",
+   "rating": 66,
+   "parts": {
+    "signal": 30,
+    "clean": 13,
+    "length": 16,
+    "height": 7
+   },
+   "peak_snr": 17.0,
+   "lock_s": 570,
+   "max_elev": 48,
+   "direction": "northbound",
+   "outlines": [
+    [
+     [
+      43.062,
+      27.916
+     ],
+     [
+      43.062,
+      71.323
+     ],
+     [
+      6.137,
+      71.323
+     ],
+     [
+      6.137,
+      27.916
+     ]
+    ]
+   ],
+   "repaired": true,
+   "index": 1,
+   "thumb": "footprint/thumbs/METEOR-M2-4-20261029-110952.jpg",
+   "share": 0.1279,
+   "on_map": true,
+   "link": "captures.html#METEOR-M2-4-20261029-110952"
   }
  ]
 }
