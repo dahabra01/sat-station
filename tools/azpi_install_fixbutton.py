@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Adds the "Fix image for publishing" button to Home Base (Nov 2026).
+Adds to Home Base (Nov 2026):
+  * the "Fix image for publishing" button on every pass card
+  * an "On sat.dahabra.com now" list with a Take down button for every posted pass, however it
+    was posted (phone question or Home Base); pass cards also recognise phone-posted passes
 
 Home Base lives on the Pi in /home/pi/azpi-portal (passflow.py + web/home.html), outside this
 website repo, so it can't get new code by itself. azpi_publish.py runs this at the start of every
@@ -92,11 +95,84 @@ PAGE_EDITS = [
 ]
 
 
+# ---------------------------------------------------------------- take down from Home Base (2nd feature)
+SITE_MARK = "take down from Home Base (Nov 2026)"
+
+
+def site_passflow_edits():
+    with open(os.path.join(HERE, "fixbutton", "passflow_site.py")) as fh:
+        fn = fh.read()
+    return [
+        ("# ------------------------------------------------------------------ 6 publish",
+         fn.strip("\n") + "\n\n", "before"),
+        ('on_site = bool(other) and other.get("id") == sid',
+         'on_site = bool(other) and same_pass(other.get("id"), sid)', "replace"),
+        ('r = _publisher("--take-down", meta.get("site_id") or site_id(meta))',
+         'r = _publisher("--take-down", posted_id(meta))', "replace"),
+        ('"home": at_home(), "results": results()}',
+         '"home": at_home(), "results": results(), "site": site_list()}', "replace"),
+        ('    if p in ("/api/passflow/publish", "/api/passflow/unpublish"):',
+         '    if p == "/api/passflow/takedown":          # take any posted pass off the website\n'
+         '        sid = str(body.get("id", ""))\n'
+         '        if not re.fullmatch(r"METEOR-M2-[0-9x]-\\d{8}-\\d{6}", sid) or sid not in [e.get("id") for e in site_posts().values()]:\n'
+         '            return 400, {"error": "That pass isn\'t on the website"}\n'
+         '        if not at_home():\n'
+         '            return 400, {"error": "Only on home Wi-Fi: the Pi never publishes over the phone\'s data"}\n'
+         '        busy = jload(TAKEDOWN, {})\n'
+         '        if busy.get(sid) and time.time() - busy[sid] < 900:\n'
+         '            return 409, {"error": "Already taking that one down"}\n'
+         '        busy[sid] = int(time.time())\n'
+         '        jsave(TAKEDOWN, busy)\n'
+         '        spawn("takedown", sid)\n'
+         '        return 200, {"ok": True}\n', "before"),
+        ('    if a[0] == "flip" and len(a) > 1:',
+         '    if a[0] == "takedown" and len(a) > 1:\n'
+         '        ok, msg = take_down(a[1])\n'
+         '        st = jload(STATUS, {"log": []})\n'
+         '        st.setdefault("log", []).append(time.strftime("%H:%M") + "  %s: %s" % (a[1], msg))\n'
+         '        jsave(STATUS, st)\n'
+         '        print(msg)\n'
+         '        sys.exit(0 if ok else 1)\n', "before"),
+    ]
+
+
+SITE_PAGE_EDITS = [
+    ('  <section style="display:flex;flex-direction:column;gap:10px">\n    <h2>Passes</h2>',
+     '  <section style="display:flex;flex-direction:column;gap:10px">\n'
+     '    <style>.sites{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}'
+     '.site{display:grid;grid-template-columns:64px 1fr;gap:8px 10px;align-items:center;background:var(--card);border:1px solid #2c3a48;border-radius:12px;padding:8px}'
+     '.site img{width:64px;height:64px;object-fit:cover;border-radius:8px;background:#0b1520}'
+     '.site .t{min-width:0;font-size:14px}.site .btn{grid-column:1/-1}</style>\n'
+     '    <h2>On sat.dahabra.com now</h2>\n'
+     '    <div class="muted" style="font-size:13px">Every pass on the website, however it got there. Take one down, fix it on its card below, then Publish it again if you like it.</div>\n'
+     '    <div class="sites" id="onsite"><div class="muted">Loading…</div></div>\n'
+     '  </section>\n', "before"),
+    ("  $('log').textContent=",
+     "  const ons=S.site||[];$('onsite').innerHTML=ons.length?ons.map(siteCard).join(''):'<div class=\"muted\">Nothing on the website right now.</div>';\n",
+     "before"),
+    ("async function saveRules(){",
+     "function siteCard(e){\n"
+     "  const b=e.busy?`<button class=\"btn\" disabled>Taking down…</button>`:!S.home?`<button class=\"btn\" disabled title=\"Only on home Wi-Fi\">Home Wi-Fi only</button>`:\n"
+     "    `<button class=\"btn red\" data-take=\"${esc(e.id)}\" data-when=\"${esc(e.day+' '+e.start_local)}\">Take down</button>`;\n"
+     "  return `<div class=\"site\"><img src=\"${esc(e.thumb)}\" alt=\"\" loading=\"lazy\"><div class=\"t\"><b>Meteor ${esc(e.sat)}</b><br>${esc(new Date(e.day+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}))} · ${esc(e.start_local)}\n"
+     "    <div class=\"muted\" style=\"font-size:12px\">${e.fixed?'Fixed · ':''}${e.home_base?'from Home Base':'from the phone question'}</div></div>${b}</div>`;\n"
+     "}\n"
+     "$('onsite').onclick=async e=>{const b=e.target.closest('[data-take]');if(!b)return;\n"
+     "  if(!b.classList.contains('sure')){clearTimeout(timer);b.classList.add('sure');b.textContent='Tap again to take it down';timer=setTimeout(load,6000);return}\n"
+     "  b.disabled=true;b.textContent='Taking down…';\n"
+     "  try{await post('/api/passflow/takedown',{id:b.dataset.take});setTimeout(load,4000);setTimeout(load,30000)}catch(err){msg(err.message);load()}};\n",
+     "before"),
+]
+
+
 def apply(text, edits):
     for anchor, new, where in edits:
         if text.count(anchor) != 1:
             return None, anchor
-        text = text.replace(anchor, new + anchor if where == "before" else anchor + new)
+        if where == "replace":
+            text = text.replace(anchor, new)
+        else:
+            text = text.replace(anchor, new + anchor if where == "before" else anchor + new)
     return text, None
 
 
@@ -125,14 +201,23 @@ def install(dry=False, log=print):
         return False, "Home Base not found on this Pi"
     pf = open(PASSFLOW).read()
     pg = open(PAGE).read()
-    if MARK in pf and 'data-act="fix"' in pg:
+    features = [("Fix image for publishing", MARK, 'data-act="fix"', passflow_edits, PAGE_EDITS),
+                ("take down from the website", SITE_MARK, 'id="onsite"', site_passflow_edits, SITE_PAGE_EDITS)]
+    added = []
+    new_pf, new_pg = pf, pg
+    for name, pf_mark, pg_mark, pf_edits, pg_edits in features:
+        if pf_mark in new_pf and pg_mark in new_pg:
+            continue
+        a, miss = apply(new_pf, pf_edits()) if pf_mark not in new_pf else (new_pf, None)
+        if miss:
+            return False, f"Home Base's passflow.py has changed (couldn't find: {miss[:60]})"
+        b, miss = apply(new_pg, pg_edits) if pg_mark not in new_pg else (new_pg, None)
+        if miss:
+            return False, f"Home Base's page has changed (couldn't find: {miss[:60]})"
+        new_pf, new_pg = a, b
+        added.append(name)
+    if not added:
         return True, "already in"
-    new_pf, miss = apply(pf, passflow_edits()) if MARK not in pf else (pf, None)
-    if miss:
-        return False, f"Home Base's passflow.py has changed (couldn't find: {miss[:60]})"
-    new_pg, miss = apply(pg, PAGE_EDITS) if 'data-act="fix"' not in pg else (pg, None)
-    if miss:
-        return False, f"Home Base's page has changed (couldn't find: {miss[:60]})"
     test = "/tmp/azpi_passflow_fixtest.py"
     with open(test, "w") as fh:
         fh.write(new_pf)
@@ -142,11 +227,15 @@ def install(dry=False, log=print):
         return False, f"the new Home Base code didn't check out ({e.msg[-80:]}), nothing changed"
     finally:
         os.remove(test)
+    what = " and ".join(added)
     if dry:
-        return True, "would add the button (dry run)"
-    for path, text in ((PASSFLOW, new_pf), (PAGE, new_pg)):
-        if not os.path.exists(path + ".bak-fixbutton"):
-            shutil.copy2(path, path + ".bak-fixbutton")
+        return True, f"would add: {what} (dry run)"
+    tag = ".bak-fixbutton" if "Fix image for publishing" in added else ".bak-takedown"
+    for path, text, old_text in ((PASSFLOW, new_pf, pf), (PAGE, new_pg, pg)):
+        if text == old_text:
+            continue
+        if not os.path.exists(path + tag):
+            shutil.copy2(path, path + tag)
         tmp = path + ".tmp-fixbutton"
         with open(tmp, "w") as fh:
             fh.write(text)
@@ -154,23 +243,22 @@ def install(dry=False, log=print):
         os.replace(tmp, path)
     r = subprocess.run(["sudo", "-n", "systemctl", "restart", "azpi-portal"], capture_output=True, text=True)
     if r.returncode:
-        return True, "button added; it shows after the Pi's next restart (couldn't restart Home Base by itself)"
-    return True, "button added and Home Base restarted"
+        return True, f"added {what}; it shows after the Pi's next restart (couldn't restart Home Base by itself)"
+    return True, f"added {what} and restarted Home Base"
 
 
 def run(log=print, dry=False):
     ok, msg = install(dry=dry, log=log)
     if msg == "already in":
         return ok, msg
-    log(f"[fix button] {msg}")
+    log(f"[Home Base update] {msg}")
     if not dry:
         if ok:
-            tell("Home Base now has a \"Fix image for publishing\" button on every pass, next to Rotate 180°. "
-                 "It repairs the coloured and black lines, keeps the originals, and tapping it again "
-                 "(\"Undo fix\") puts them back. " + msg[0].upper() + msg[1:] + ".", True)
+            tell("Home Base update: " + msg + ". \"Fix image for publishing\" is on every pass card, and the new "
+                 "\"On sat.dahabra.com now\" list at the top lets you take any posted pass down. "
+                 "Refresh the Home Base page to see it.", True)
         else:
-            tell("The \"Fix image for publishing\" button couldn't be added to Home Base: " + msg +
-                 ". Nothing was changed.", False)
+            tell("A Home Base update couldn't be added: " + msg + ". Nothing was changed.", False)
     return ok, msg
 
 

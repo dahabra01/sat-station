@@ -46,6 +46,7 @@ REF_W = 1568              # full MSU-MR swath width; sizes below are for that wi
 WIN = 31                  # rows of context for "what this spot normally looks like"
 DEV = 48                  # brightness jump (0-255) that marks a garbled spot
 DARK = 8                  # a channel this dark where its neighbours aren't = dropped out
+LIT = 40                  # ...or where another channel on the same spot is at least this bright
 RUN = 40                  # a line has to run at least this far across to count
 ROW_SHARE = 0.25          # all-channel gaps: only lines at least this much damaged
 MAX_BLEND = 16            # all-channel gaps up to this many lines get blended; bigger = black
@@ -109,6 +110,12 @@ def find_damage(f):
         ref = _vmedian(ch, win)
         garbled = np.abs(ch - ref) > DEV
         dropped = (ch < DARK) & (ref > DARK + 25)
+        if c > 1:
+            # needs no clean neighbours, so it still works in badly hit stretches: the channels of a
+            # Meteor picture rise and fall together, so one reading black while another on the same
+            # spot is clearly lit means that channel dropped out there
+            others = np.delete(f, k, axis=2).max(2)
+            dropped |= (ch < DARK) & (others > LIT)
         bad[..., k] = _hline(garbled | dropped, run)
     # grow by a line up and down: the edges of a lost strip are usually smeared too
     grown = bad.copy()

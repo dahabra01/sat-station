@@ -84,7 +84,7 @@ def make(folder, out_dir, luts=None):
     valid = raw > 8                                     # black = no data
     T = raw_to_kelvin(raw, valid)
     labels = None
-    map_path = find(folder, "az_ir38_raw_corrected_map.png")
+    map_path = None if os.environ.get("AZPI_NO_SATDUMP_LABELS") else find(folder, "az_ir38_raw_corrected_map.png")
     if map_path:
         lab = np.asarray(Image.open(map_path).convert("RGB")).astype(int)
         if lab.shape[:2] == raw.shape:

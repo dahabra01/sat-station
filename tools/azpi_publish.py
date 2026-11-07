@@ -915,6 +915,12 @@ def build_folder_entry(folder, meta):
     pics = folder_pictures(folder)
     if not pics:
         raise RuntimeError("no pictures in that pass folder")
+    # Turned 180° on Home Base (northbound pass): SatDump wrote the city names before the turn, so
+    # they'd be upside down. Use the clean pictures and draw borders and names afresh, right way up.
+    turned = bool(meta.get("flipped"))
+    if turned:
+        pics = [(k, pr, c, c) for k, pr, s_, c in pics]
+    os.environ["AZPI_NO_SATDUMP_LABELS"] = "1" if turned else ""
     rel = os.path.join(OUT_DIR, pid)
     target = os.path.join(SITE, rel)
     if not DRY:
@@ -954,6 +960,8 @@ def build_folder_entry(folder, meta):
              "manual": True, "from": "home-base"}
     entry.update(stats)
     entry.update(pass_geometry(start))
+    if turned:
+        entry["upright"] = True               # names drawn after the turn, right way up
     fix = load_manifest(os.path.join(folder, "fix.json")) if os.path.exists(os.path.join(folder, "fix.json")) else {}
     if fix.get("main"):                       # Home Base's "Fix image for publishing" was used on it
         entry["fixed"] = fix["main"]
@@ -1114,6 +1122,44 @@ def home_base(mode, value):
                   id=entry["id"], url=f"{SITE_URL}#{entry['id']}")
 
 
+def relabel_turned(by_day):
+    """One-off catch-up: Home Base passes turned 180° before Nov 7 went up with SatDump's city
+    names upside down. Post them again from their pass folders with names drawn the right way up."""
+    todo = [(d, e) for d, e in by_day.items() if e.get("from") == "home-base" and not e.get("upright")
+            and e.get("direction") == "northbound"]
+    if not todo or DRY:
+        return
+    folders = []
+    for mp in glob.glob(os.path.join(os.environ.get("AZPI_PASSES_DIR", "/srv/passes"), "*", "pass.json")):
+        try:
+            with open(mp) as fh:
+                m = json.load(fh)
+            folders.append((int(m["start"]), os.path.dirname(mp), m))
+        except Exception:
+            continue
+    changed = []
+    for day, e in todo:
+        t = parse_iso(e["start_utc"]).timestamp()
+        hit = next(((f, m) for st_, f, m in folders if abs(st_ - t) < 180 and m.get("flipped")), None)
+        if not hit:
+            continue
+        try:
+            new = build_folder_entry(*hit)
+        except Exception as ex:
+            say(f"couldn't redo the names on {e['id']}: {ex}")
+            continue
+        for k in ("peak_snr", "lock_s", "timeline"):
+            if not new.get(k) and e.get(k):
+                new[k] = e[k]
+        if new["id"] != e["id"]:
+            shutil.rmtree(os.path.join(SITE, OUT_DIR, e["id"]), ignore_errors=True)
+        by_day[day] = new
+        changed.append(new["id"])
+        say(f"{new['id']}: city names redrawn the right way up")
+    if changed:
+        write_and_push(by_day, changed, "City names the right way up on turned passes")
+
+
 def fix_button():
     """Put the "Fix image for publishing" button into Home Base if it isn't there yet
     (tools/azpi_install_fixbutton.py; does nothing once it's in)."""
@@ -1157,6 +1203,7 @@ def main():
     by_day = {e["day"]: e for e in manifest.get("passes", [])}
     all_passes = find_passes()
 
+    relabel_turned(by_day)
     if ASK_FIRST:
         ask_first(st, by_day, all_passes)
     else:
