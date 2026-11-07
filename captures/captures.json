@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-07T16:44:40+00:00",
+ "updated": "2026-11-07T17:18:31+00:00",
  "passes": [
   {
    "id": "METEOR-M2-4-20261107-111512",
@@ -104,13 +104,14 @@
    "max_az": 268,
    "direction": "northbound",
    "pass_end": "2026-11-07T11:30:09+00:00",
+   "upright": true,
    "fixed": {
     "rebuilt_pct": 20.2,
     "blended_pct": 8.4,
     "blacked_pct": 0.0
    },
-   "overlays": true,
-   "plain": "captures/METEOR-M2-4-20261107-111512/plain_221.jpg"
+   "plain": "captures/METEOR-M2-4-20261107-111512/plain_221.jpg",
+   "overlays": true
   },
   {
    "id": "METEOR-M2-4-20261106-114242",
@@ -269,8 +270,9 @@
    "max_az": 68,
    "direction": "northbound",
    "pass_end": "2026-11-05T10:33:25+00:00",
-   "overlays": true,
-   "plain": "captures/METEOR-M2-4-20261105-101833/plain_221.jpg"
+   "upright": true,
+   "plain": "captures/METEOR-M2-4-20261105-101833/plain_221.jpg",
+   "overlays": true
   },
   {
    "id": "METEOR-M2-3-20261104-052522",
