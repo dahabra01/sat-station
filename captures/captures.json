@@ -1,6 +1,117 @@
 {
- "updated": "2026-11-07T16:43:20+00:00",
+ "updated": "2026-11-07T16:44:40+00:00",
  "passes": [
+  {
+   "id": "METEOR-M2-4-20261107-111512",
+   "sat": "Meteor-M N2-4",
+   "day": "2026-11-07",
+   "start_utc": "2026-11-07T11:15:12+00:00",
+   "start_local": "15:15",
+   "thumb": "captures/METEOR-M2-4-20261107-111512/thumb.jpg",
+   "polar": null,
+   "images": [
+    {
+     "kind": "221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_221.jpg"
+    },
+    {
+     "kind": "rain_221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_rain_221.jpg"
+    },
+    {
+     "kind": "124",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_124.jpg"
+    },
+    {
+     "kind": "cloudtop",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_cloudtop.jpg"
+    },
+    {
+     "kind": "enhanced_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_enhanced_ir.jpg"
+    },
+    {
+     "kind": "color_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_color_ir.jpg"
+    },
+    {
+     "kind": "ir38",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_ir38.jpg"
+    },
+    {
+     "kind": "mcir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_mcir.jpg"
+    },
+    {
+     "kind": "msa",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261107-111512/spread_msa.jpg"
+    }
+   ],
+   "mark": 1,
+   "manual": true,
+   "from": "home-base",
+   "peak_snr": 17.5,
+   "lock_s": 720,
+   "timeline": [
+    [
+     0,
+     60
+    ],
+    [
+     1,
+     20
+    ],
+    [
+     0,
+     10
+    ],
+    [
+     1,
+     680
+    ],
+    [
+     0,
+     10
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     0,
+     20
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     0,
+     80
+    ]
+   ],
+   "max_elev": 42,
+   "aos_az": 182,
+   "max_az": 268,
+   "direction": "northbound",
+   "pass_end": "2026-11-07T11:30:09+00:00",
+   "fixed": {
+    "rebuilt_pct": 20.2,
+    "blended_pct": 8.4,
+    "blacked_pct": 0.0
+   },
+   "overlays": true,
+   "plain": "captures/METEOR-M2-4-20261107-111512/plain_221.jpg"
+  },
   {
    "id": "METEOR-M2-4-20261106-114242",
    "sat": "Meteor-M N2-4",
