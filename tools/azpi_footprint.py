@@ -726,7 +726,64 @@ def compose(layers):
                 take |= have & (cur == m)
         mosaic[y0:y1, x0:x1][take] = z["colour"][take]
         cur[take] = n
+    tidy_leftovers(order, mosaic, owner)
     return order, mosaic, owner
+
+
+LEFTOVER = float(os.environ.get("AZPI_LEFTOVER", "0.20"))
+RULE = ("A pass only replaces ground already covered if its rating is the same or higher; "
+        "same rating, the newer pass wins. Uncovered ground is filled by any pass. "
+        "A pass left with only a small leftover of its picture hands it to other passes "
+        "that cover the same ground.")
+
+
+def tidy_leftovers(order, mosaic, owner):
+    """Captain's addition, 8 Nov 2026: a pass that keeps only a small leftover of its own picture
+    (under 20%; the rest taken by better passes) leaves odd patches like the triangle north of
+    Riyadh. Where other passes also cover those leftovers, the best of them takes over. Ground
+    nobody else covers stays, so the map never gets holes."""
+    if not order:
+        return
+    layers = []
+    for n, info in enumerate(order, start=1):
+        z = np.load(os.path.join(WORK, "layers", info["id"] + ".npz"))
+        layers.append((n, info, z["have"], z["colour"]))
+    ratio = {}
+    for n, info, have, _ in layers:
+        ratio[n] = (owner == n).sum() / max(1, int(have.sum()))
+    moved = {}
+    for n, info, have, _ in sorted(layers, key=lambda l: ratio[l[0]]):
+        if ratio[n] >= LEFTOVER or ratio[n] == 0:
+            continue
+        mine = owner == n
+        best = np.zeros(owner.shape, np.uint16)          # best other pass covering each leftover pixel
+        for m, other, ohave, _ in layers:
+            if m == n or ratio[m] < LEFTOVER:            # never hand leftovers to another leftover
+                continue
+            y0, y1, x0, x1 = other["box"]
+            cov = np.zeros(owner.shape, bool)
+            cov[y0:y1, x0:x1] = ohave
+            cov &= mine
+            if not cov.any():
+                continue
+            cur = best[cov]
+            wins = [c for c in np.unique(cur) if c == 0 or better(other, order[c - 1])]
+            sel = cov.copy()
+            sel[cov] = np.isin(cur, wins)
+            best[sel] = m
+        give = mine & (best > 0)
+        if not give.any():
+            continue
+        for m in np.unique(best[give]):
+            sel = give & (best == m)
+            _, other, _, ocol = layers[m - 1]
+            y0, y1, x0, x1 = other["box"]
+            ys, xs = np.nonzero(sel)
+            mosaic[ys, xs] = ocol[ys - y0, xs - x0]
+            owner[ys, xs] = m
+        moved[n] = int(give.sum())
+        ratio[n] = (owner == n).sum() / max(1, int(have.sum()))
+        print(f"  leftovers of {info['id']} handed to other passes: {moved[n]} map pixels")
 
 
 def write_site(order, mosaic, owner):
@@ -778,8 +835,7 @@ def write_site(order, mosaic, owner):
     latest = max(order, key=lambda i: i["start_utc"]) if order else None
     doc = {
         "updated": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
-        "rule": "A pass only replaces ground already covered if its rating is the same or higher; "
-                "same rating, the newer pass wins. Uncovered ground is filled by any pass.",
+        "rule": RULE,
         "bounds": {"lon0": LON0, "lon1": LON1, "lat0": LAT0, "lat1": LAT1, "width": MAP_W, "height": MAP_H},
         "area_km2": int(area_rows.sum()),
         "pass_count": sum(1 for p in passes if p["on_map"]),
@@ -814,6 +870,11 @@ def update(site=None, force=False):
                     and done[e["id"]].get("repair_v", 1) < REPAIR_VERSION))
             and (skipped.get(e["id"], {}).get("version") != VERSION or e.get("plain_map"))]
     changed = bool(remove) or force or DIRTY or "--compose" in ARGS
+    try:                                                # the map's rule changed since it was drawn: redraw
+        with open(os.path.join(SITE, "footprint", "footprint.json")) as fh:
+            changed |= json.load(fh).get("rule") != RULE
+    except Exception:
+        pass
     by_id = {e["id"]: e for e in manifest.get("passes", [])}
     for info in done.values():                          # readings corrected since: re-rate
         e = by_id.get(info["id"])
