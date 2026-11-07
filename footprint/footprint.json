@@ -1,6 +1,6 @@
 {
- "updated": "2026-11-07T17:18:32+00:00",
- "rule": "A pass only replaces ground already covered if its rating is the same or higher; same rating, the newer pass wins. Uncovered ground is filled by any pass.",
+ "updated": "2026-11-07T21:00:09+00:00",
+ "rule": "A pass only replaces ground already covered if its rating is the same or higher; same rating, the newer pass wins. Uncovered ground is filled by any pass. A pass left with only a small leftover of its picture hands it to other passes that cover the same ground.",
  "bounds": {
   "lon0": 25.0,
   "lon1": 92.0,
@@ -53,7 +53,7 @@
    "repaired": null,
    "index": 8,
    "thumb": "footprint/thumbs/METEOR-M2-4-20261107-111512.jpg",
-   "share": 0.2593,
+   "share": 0.2698,
    "on_map": true,
    "link": "captures.html#METEOR-M2-4-20261107-111512"
   },
@@ -283,7 +283,7 @@
    "repaired": null,
    "index": 4,
    "thumb": "footprint/thumbs/METEOR-M2-3-20261104-052522.jpg",
-   "share": 0.017,
+   "share": 0.0065,
    "on_map": true,
    "link": "captures.html#METEOR-M2-3-20261104-052522"
   },
