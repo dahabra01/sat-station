@@ -1,148 +1,83 @@
 {
- "updated": "2026-11-06T07:45:57+00:00",
+ "updated": "2026-11-07T16:43:20+00:00",
  "passes": [
   {
-   "id": "METEOR-M2-3-20261106-061907",
-   "sat": "Meteor-M N2-3",
+   "id": "METEOR-M2-4-20261106-114242",
+   "sat": "Meteor-M N2-4",
    "day": "2026-11-06",
-   "start_utc": "2026-11-06T06:19:07+00:00",
-   "start_local": "10:19",
-   "thumb": "captures/METEOR-M2-3-20261106-061907/thumb.jpg",
-   "polar": "captures/METEOR-M2-3-20261106-061907/polar.png",
+   "start_utc": "2026-11-06T11:42:42+00:00",
+   "start_local": "15:42",
+   "thumb": "captures/METEOR-M2-4-20261106-114242/thumb.jpg",
+   "polar": null,
    "images": [
     {
      "kind": "221",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261106-061907/spread_221.jpg"
-    },
-    {
-     "kind": "221",
-     "proj": "equidistant",
-     "file": "captures/METEOR-M2-3-20261106-061907/equidistant_221.jpg"
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_221.jpg"
     },
     {
      "kind": "rain_221",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261106-061907/spread_rain_221.jpg"
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_rain_221.jpg"
     },
     {
-     "kind": "rain_221",
-     "proj": "equidistant",
-     "file": "captures/METEOR-M2-3-20261106-061907/equidistant_rain_221.jpg"
-    },
-    {
-     "kind": "224",
+     "kind": "124",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261106-061907/spread_224.jpg"
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_124.jpg"
     },
     {
-     "kind": "224",
-     "proj": "equidistant",
-     "file": "captures/METEOR-M2-3-20261106-061907/equidistant_224.jpg"
-    },
-    {
-     "kind": "thermal",
+     "kind": "cloudtop",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261106-061907/spread_thermal.jpg"
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_cloudtop.jpg"
     },
     {
-     "kind": "thermal",
-     "proj": "equidistant",
-     "file": "captures/METEOR-M2-3-20261106-061907/equidistant_thermal.jpg"
-    },
-    {
-     "kind": "67",
+     "kind": "enhanced_ir",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261106-061907/spread_67.jpg"
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_enhanced_ir.jpg"
     },
     {
-     "kind": "67",
-     "proj": "equidistant",
-     "file": "captures/METEOR-M2-3-20261106-061907/equidistant_67.jpg"
-    },
-    {
-     "kind": "rain_224",
+     "kind": "color_ir",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261106-061907/spread_rain_224.jpg"
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_color_ir.jpg"
     },
     {
-     "kind": "rain_224",
-     "proj": "equidistant",
-     "file": "captures/METEOR-M2-3-20261106-061907/equidistant_rain_224.jpg"
-    },
-    {
-     "kind": "rain_67",
+     "kind": "ir38",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261106-061907/spread_rain_67.jpg"
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_ir38.jpg"
     },
     {
-     "kind": "rain_67",
-     "proj": "equidistant",
-     "file": "captures/METEOR-M2-3-20261106-061907/equidistant_rain_67.jpg"
+     "kind": "mcir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_mcir.jpg"
+    },
+    {
+     "kind": "msa",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261106-114242/spread_msa.jpg"
     }
    ],
    "mark": 1,
-   "peak_snr": 15.1,
-   "lock_s": 280,
+   "manual": true,
+   "from": "home-base",
+   "peak_snr": 15.9,
+   "lock_s": 320,
    "timeline": [
     [
      0,
-     260
-    ],
-    [
-     1,
-     100
-    ],
-    [
-     0,
-     60
-    ],
-    [
-     1,
-     10
-    ],
-    [
-     0,
-     20
-    ],
-    [
-     1,
-     110
-    ],
-    [
-     0,
      10
     ],
     [
      1,
-     20
-    ],
-    [
-     0,
-     10
-    ],
-    [
-     1,
-     20
-    ],
-    [
-     0,
-     10
-    ],
-    [
-     1,
-     20
-    ],
-    [
-     0,
-     210
+     320
     ]
    ],
-   "max_elev": 29,
-   "aos_az": 358,
-   "max_az": 302,
-   "direction": "southbound",
-   "pass_end": "2026-11-06T06:33:23+00:00"
+   "fixed": {
+    "rebuilt_pct": 1.0,
+    "blended_pct": 1.2,
+    "blacked_pct": 0.0
+   },
+   "overlays": true,
+   "plain": "captures/METEOR-M2-4-20261106-114242/plain_221.jpg"
   },
   {
    "id": "METEOR-M2-4-20261105-101833",
