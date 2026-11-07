@@ -37,6 +37,8 @@ Options:
                       question. It takes that day's place on the site and the daily
                       ask-first run won't swap it out. Home Wi-Fi only, like everything here.
   --take-down ID      remove one posted pass from the site (Home Base's Take down button)
+  Every run also makes sure Home Base has its "Fix image for publishing" button
+  (tools/azpi_install_fixbutton.py, repair in tools/azpi_fix_image.py).
   --map-sync-only     only bring the Big Picture map up to date (tools/azpi_map_sync.py);
                       every normal run does this too, after posting. Add --map-retry to try
                       again passes it gave up on.
@@ -952,6 +954,9 @@ def build_folder_entry(folder, meta):
              "manual": True, "from": "home-base"}
     entry.update(stats)
     entry.update(pass_geometry(start))
+    fix = load_manifest(os.path.join(folder, "fix.json")) if os.path.exists(os.path.join(folder, "fix.json")) else {}
+    if fix.get("main"):                       # Home Base's "Fix image for publishing" was used on it
+        entry["fixed"] = fix["main"]
     # labelled pictures from SatDump: keep a clean natural-colour copy for the Footprint map
     clean221 = next((c for k, p, s, c in pics if k == "221" and p == "spread"), None)
     if any(s != c for k, p, s, c in pics):
@@ -1109,6 +1114,19 @@ def home_base(mode, value):
                   id=entry["id"], url=f"{SITE_URL}#{entry['id']}")
 
 
+def fix_button():
+    """Put the "Fix image for publishing" button into Home Base if it isn't there yet
+    (tools/azpi_install_fixbutton.py; does nothing once it's in)."""
+    if DRY:
+        return
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import azpi_install_fixbutton
+        azpi_install_fixbutton.run(log=say)
+    except Exception as e:
+        say(f"fix button: {e.__class__.__name__}: {e}")
+
+
 # ---------------------------------------------------------------- main
 def main():
     st = load_state()
@@ -1130,6 +1148,7 @@ def main():
             say("git pull failed: " + r.stderr.strip())
             return
 
+    fix_button()                                # Home Base's "Fix image for publishing" (once)
     if "--map-sync-only" in ARGS:
         map_sync()
         return
