@@ -165,6 +165,38 @@ SITE_PAGE_EDITS = [
 ]
 
 
+# ---------------------------------------------------------------- fix older passes (3rd feature)
+OLDER_MARK = "fix older passes (Nov 2026)"
+
+
+def older_passflow_edits():
+    with open(os.path.join(HERE, "fixbutton", "passflow_older.py")) as fh:
+        fn = fh.read()
+    return [
+        ("# ------------------------------------------------------------------ 6 publish",
+         fn.strip("\n") + "\n\n", "before"),
+        ("def results(limit=12):", "def results(limit=40):", "replace"),
+        ('"busy": bool(t and time.time() - t < 900)})',
+         '"busy": bool(t and time.time() - t < 900), **folder_for(e.get("id"))})', "replace"),
+        ('        if meta.get("published") and not what.startswith("fix failed"):',
+         '        if (meta.get("published") or on_site_now(meta)) and not what.startswith("fix failed"):', "replace"),
+    ]
+
+
+OLDER_PAGE_EDITS = [
+    ("  return `<div class=\"site\"><img",
+     "  const fx=!e.folder?`<button class=\"btn\" disabled title=\"The Pi has no SatDump copy of this pass\">Can't fix: no original on the Pi</button>`:\n"
+     "    e.fixing?`<button class=\"btn\" disabled>Fixing… (a few minutes)</button>`:\n"
+     "    `<button class=\"btn\" data-act=\"fix\" data-name=\"${esc(e.folder)}\">${e.fixed_folder?'Undo fix':'Fix image for publishing'}</button>`;\n",
+     "before"),
+    ("</div>${b}</div>`;", "</div>${b}${fx}</div>`;", "replace"),
+    ("$('onsite').onclick=async e=>{const b=e.target.closest('[data-take]');if(!b)return;",
+     "$('onsite').onclick=async e=>{const f=e.target.closest('[data-act=\"fix\"]');\n"
+     "  if(f){f.disabled=true;f.textContent='Fixing…';try{await post('/api/passflow/fix',{name:f.dataset.name});setTimeout(load,4000)}catch(err){msg(err.message);load()}return}\n"
+     "  const b=e.target.closest('[data-take]');if(!b)return;", "replace"),
+]
+
+
 def apply(text, edits):
     for anchor, new, where in edits:
         if text.count(anchor) != 1:
@@ -202,7 +234,8 @@ def install(dry=False, log=print):
     pf = open(PASSFLOW).read()
     pg = open(PAGE).read()
     features = [("Fix image for publishing", MARK, 'data-act="fix"', passflow_edits, PAGE_EDITS),
-                ("take down from the website", SITE_MARK, 'id="onsite"', site_passflow_edits, SITE_PAGE_EDITS)]
+                ("take down from the website", SITE_MARK, 'id="onsite"', site_passflow_edits, SITE_PAGE_EDITS),
+                ("fixing older passes", OLDER_MARK, "Can't fix: no original", older_passflow_edits, OLDER_PAGE_EDITS)]
     added = []
     new_pf, new_pg = pf, pg
     for name, pf_mark, pg_mark, pf_edits, pg_edits in features:
@@ -230,7 +263,8 @@ def install(dry=False, log=print):
     what = " and ".join(added)
     if dry:
         return True, f"would add: {what} (dry run)"
-    tag = ".bak-fixbutton" if "Fix image for publishing" in added else ".bak-takedown"
+    tag = ".bak-fixbutton" if "Fix image for publishing" in added else \
+        ".bak-takedown" if "take down from the website" in added else ".bak-olderfix"
     for path, text, old_text in ((PASSFLOW, new_pf, pf), (PAGE, new_pg, pg)):
         if text == old_text:
             continue
@@ -254,9 +288,9 @@ def run(log=print, dry=False):
     log(f"[Home Base update] {msg}")
     if not dry:
         if ok:
-            tell("Home Base update: " + msg + ". \"Fix image for publishing\" is on every pass card, and the new "
-                 "\"On sat.dahabra.com now\" list at the top lets you take any posted pass down. "
-                 "Refresh the Home Base page to see it.", True)
+            tell("Home Base update: " + msg + ". \"Fix image for publishing\" is on every pass card (the last 40 "
+                 "passes now show), and the \"On sat.dahabra.com now\" list at the top can take any posted pass "
+                 "down or fix it and re-post it. Refresh the Home Base page to see it.", True)
         else:
             tell("A Home Base update couldn't be added: " + msg + ". Nothing was changed.", False)
     return ok, msg

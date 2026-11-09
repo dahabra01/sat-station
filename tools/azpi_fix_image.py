@@ -14,8 +14,11 @@ What this does to each picture of a pass, without making anything up:
      the clean lines around it). This is real data from the satellite.
   2. Short gaps where every channel dropped out (a strip or two) are blended
      from the clean lines just above and below.
-  3. Anything bigger is left as plain black ("no data") instead of coloured
-     garbage. Clouds are never invented.
+  3. Anything bigger, and black bands SatDump already left, are filled (Captain's call,
+     9 Nov 2026: no black or gaps in a published picture; a hobby project) with a mirror image
+     of the good lines just above and below, meeting in the middle. That part isn't real
+     weather; the filled picture goes on the Big Picture map too, as the Captain asked.
+     AZPI_FIX_FILL_GAPS=0 turns this off and leaves big gaps black.
 
 SatDump's labelled copies (..._map.png) get the same repair with their
 borders and city names put back on top. Laid-flat (projected) pictures can't
@@ -110,13 +113,15 @@ def find_damage(f):
         ref = _vmedian(ch, win)
         garbled = np.abs(ch - ref) > DEV
         dropped = (ch < DARK) & (ref > DARK + 25)
+        cross = np.zeros_like(dropped)
         if c > 1:
             # needs no clean neighbours, so it still works in badly hit stretches: the channels of a
             # Meteor picture rise and fall together, so one reading black while another on the same
             # spot is clearly lit means that channel dropped out there
             others = np.delete(f, k, axis=2).max(2)
-            dropped |= (ch < DARK) & (others > LIT)
-        bad[..., k] = _hline(garbled | dropped, run)
+            cross = (ch < np.maximum(DARK, 0.2 * others)) & (others > LIT)   # far darker than its partner
+        # that rule is specific enough to trust on short dashes too
+        bad[..., k] = _hline(garbled | dropped | cross, run) | _hline(cross, max(4, run // 4))
     # grow by a line up and down: the edges of a lost strip are usually smeared too
     grown = bad.copy()
     grown[1:] |= bad[:-1]
@@ -239,6 +244,80 @@ def blend_fill(f, bad):
     return out, blended, blacked
 
 
+FILL_GAPS = os.environ.get("AZPI_FIX_FILL_GAPS", "1") != "0"   # 0 = leave big gaps black as before
+EDGE_FILL = 0.06          # black bands at the very top/bottom: filled if no taller than this share
+
+
+HOLE = 30                 # all channels under this = nothing there (SatDump's gaps are 0, edges smear to ~20)
+
+
+def fill_gaps(f, blacked):
+    """Captain's call, 9 Nov 2026: no black bands or gaps in a published picture (hobby project;
+    filled pictures go on the Big Picture map too). Every band where nothing came through (ours,
+    or already black from SatDump) is filled with a mirror image of the good lines just above and
+    just below it, meeting in the middle with a soft join. Only fully good lines are copied."""
+    h, w, c = f.shape
+    out = f.copy()
+    _, run, _, _ = _scale(w)
+    dark = f.max(2) < HOLE
+    lit_rows = (~dark).sum(1)
+    big = lit_rows > 0.2 * w
+    lit_w = max(1, int(np.median(lit_rows[big]))) if big.any() else w
+    in_pic = lit_rows > 0.2 * lit_w
+    hole = blacked | (_hline(dark, run) & in_pic[:, None])          # black stretches inside the picture
+    if ndimage is not None:                                          # thin dim lines along old band edges
+        rowm = f.mean((1, 2))
+        local = ndimage.median_filter(rowm, size=9, mode="nearest")
+        hole |= ((rowm < 0.6 * local) & in_pic)[:, None]
+    lum = f.mean(2)                                                  # dim streaks inside good lines
+    hole |= _hline(lum < 0.65 * _vmedian(lum, _scale(w)[0]), run) & in_pic[:, None]
+    grow = hole.copy()                                               # and the smeared line either side
+    grow[1:] |= hole[:-1] & dark[1:]
+    grow[:-1] |= hole[1:] & dark[:-1]
+    hole = grow
+    gap = (hole | dark).sum(1) >= 0.6 * lit_w                        # whole lines to fill
+    good = np.nonzero(~gap & ~hole.any(1) & in_pic)[0]
+    if not len(good):
+        return out, np.zeros((h, w), bool)
+    first, last = good.min(), good.max()
+    filled = np.zeros((h, w), bool)
+    d = np.diff(np.r_[0, gap.astype(np.int8), 0])
+    for s_, e in zip(np.nonzero(d == 1)[0], np.nonzero(d == -1)[0]):
+        n = e - s_
+        above = good[good < s_][::-1]                                # nearest good lines, outward
+        below = good[good >= e]
+        if (not len(above) or not len(below)) and n > EDGE_FILL * h:
+            continue                                                 # long run off the end: night/edge
+        i = np.arange(n)
+        A = out[above[np.minimum(i, len(above) - 1)]] if len(above) else None
+        B = out[below[np.minimum(n - 1 - i, len(below) - 1)]] if len(below) else None
+        if A is not None and B is not None:
+            mid, soft = (n - 1) / 2.0, max(3.0, n / 6.0)
+            wb = np.clip((i - mid) / soft + 0.5, 0, 1)[:, None, None]
+            band = A * (1 - wb) + B * wb
+        else:
+            band = A if A is not None else B
+        m = hole[s_:e] | dark[s_:e] | gap[s_:e, None]
+        tgt = out[s_:e]
+        tgt[m] = band[m]
+        out[s_:e] = tgt
+        filled[s_:e] |= m
+    # short black pieces inside good lines: fill each column between the nearest good pixels
+    rest = hole & ~filled
+    rest[:first] = False
+    rest[last + 1:] = False
+    for x in np.nonzero(rest.any(0))[0]:
+        col = rest[:, x]
+        dd = np.diff(np.r_[0, col.astype(np.int8), 0])
+        for s_, e in zip(np.nonzero(dd == 1)[0], np.nonzero(dd == -1)[0]):
+            a_ = out[s_ - 1, x] if s_ > 0 else out[min(e, h - 1), x]
+            b_ = out[e, x] if e < h else a_
+            t = (np.arange(1, e - s_ + 1) / (e - s_ + 1))[:, None]
+            out[s_:e, x] = a_ * (1 - t) + b_ * t
+            filled[s_:e, x] = True
+    return out, filled
+
+
 def repair(arr):
     """uint8/uint16 picture array -> (fixed array same type, stats dict)."""
     src = np.asarray(arr)
@@ -260,10 +339,21 @@ def repair(arr):
         bad = find_damage(f)
         f, done = cross_fill(f, bad)
         f, blended, blacked = blend_fill(f, bad)
+    cloned = np.zeros(blacked.shape, bool)
+    if FILL_GAPS:
+        f, cloned = fill_gaps(f, blacked)
+        for _ in range(2):                              # anything a first pass couldn't reach
+            f, more = fill_gaps(f, np.zeros_like(blacked))
+            if not more.any():
+                break
+            cloned |= more
+        blacked = blacked & ~cloned
     lit = max(int((src.reshape(src.shape[0], src.shape[1], -1).max(2) > 0).sum()), 1)
     stats = {"rebuilt_pct": round(100.0 * done.sum() / lit, 1),
              "blended_pct": round(100.0 * blended.sum() / lit, 1),
-             "blacked_pct": round(100.0 * blacked.sum() / lit, 1)}
+             "blacked_pct": round(100.0 * blacked.sum() / lit, 1),
+             "cloned_pct": round(100.0 * cloned.sum() / lit, 1)}
+    stats["blended_pct"] = round(stats["blended_pct"] + stats["cloned_pct"], 1)   # Home Base shows one "blended" figure
     out = np.clip(np.rint(f * (peak / 255.0)), 0, peak).astype(src.dtype)
     if mono:
         out = out[..., 0]
