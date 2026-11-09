@@ -39,6 +39,8 @@ Options:
   --take-down ID      remove one posted pass from the site (Home Base's Take down button)
   Every run also makes sure Home Base has its "Fix image for publishing" button
   (tools/azpi_install_fixbutton.py, repair in tools/azpi_fix_image.py).
+  Also switches on the Field Live waterfall once a 25 s test recording shows satdump's live
+  server works (tools/azpi_install_waterfall.py; nothing once it's on).
   --map-sync-only     only bring the Big Picture map up to date (tools/azpi_map_sync.py);
                       every normal run does this too, after posting. Add --map-retry to try
                       again passes it gave up on.
@@ -1173,6 +1175,19 @@ def fix_button():
         say(f"fix button: {e.__class__.__name__}: {e}")
 
 
+def waterfall():
+    """Switch on the Field Live waterfall once a short test recording proves satdump's live server
+    works (tools/azpi_install_waterfall.py, BRD 1.35; does nothing once it's on)."""
+    if DRY:
+        return
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import azpi_install_waterfall
+        azpi_install_waterfall.run(log=say)
+    except Exception as e:
+        say(f"waterfall: {e.__class__.__name__}: {e}")
+
+
 # ---------------------------------------------------------------- main
 def main():
     st = load_state()
@@ -1195,6 +1210,7 @@ def main():
             return
 
     fix_button()                                # Home Base's "Fix image for publishing" (once)
+    waterfall()                                 # Field Live waterfall: test once, then switch on (BRD 1.35)
     if "--map-sync-only" in ARGS:
         map_sync()
         return
