@@ -41,6 +41,8 @@ DAY_CLOUD = 140                 # by day, only clouds at least this bright in vi
 
 def find(folder, *names):
     """First picture in the pass's products whose name ends with one of `names` (any case)."""
+    if os.path.isdir(os.path.join(folder, "products")):    # BRD 1.83: the selected picture set only
+        folder = os.path.join(folder, "products")
     files = glob.glob(os.path.join(folder, "**", "*.png"), recursive=True)
     if os.environ.get("AZPI_NO_SATDUMP_LABELS"):          # turned pass: SatDump's names are upside down
         files = [f for f in files if not f.lower().endswith("_map.png")]

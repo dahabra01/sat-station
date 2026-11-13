@@ -134,6 +134,8 @@ def products_in(folder):
     """(SatDump's map-grid picture, clean natural-colour picture) found under folder, or Nones."""
     if not folder or not os.path.isdir(folder):
         return None, None
+    if os.path.isdir(os.path.join(folder, "products")):    # a Home Base pass: its SELECTED picture set only
+        folder = os.path.join(folder, "products")           # (BRD 1.83: SatDump and MeteorRX keep separate sets)
     files = glob.glob(os.path.join(folder, "**", "*.png"), recursive=True)
     names = {f: os.path.basename(f).lower() for f in files}
     grid = next((f for f, n in names.items() if n.endswith("az_221_map_projected.png")), None)
@@ -144,6 +146,9 @@ def products_in(folder):
 def find_raw(row):
     """The pass's raw decoded data (.cadu), wherever the station kept it."""
     if row.get("folder"):
+        sel = os.path.join(row["folder"], "data.cadu")     # BRD 1.83: the selected set's data
+        if os.path.isfile(sel):
+            return sel
         hits = glob.glob(os.path.join(row["folder"], "**", "*.cadu"), recursive=True)
         if hits:
             return max(hits, key=os.path.getsize)
