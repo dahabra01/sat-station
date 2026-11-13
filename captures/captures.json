@@ -1,89 +1,86 @@
 {
- "updated": "2026-11-13T07:06:53+00:00",
+ "updated": "2026-11-13T16:44:45+00:00",
  "passes": [
   {
-   "id": "METEOR-M2-3-20261113-051610",
-   "sat": "Meteor-M N2-3",
+   "id": "METEOR-M2-4-20261113-104511",
+   "sat": "Meteor-M N2-4",
    "day": "2026-11-13",
-   "start_utc": "2026-11-13T05:16:10+00:00",
-   "start_local": "09:16",
-   "thumb": "captures/METEOR-M2-3-20261113-051610/thumb.jpg",
+   "start_utc": "2026-11-13T10:45:11+00:00",
+   "start_local": "14:45",
+   "thumb": "captures/METEOR-M2-4-20261113-104511/thumb.jpg",
    "polar": null,
    "images": [
     {
      "kind": "221",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_221.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_221.jpg"
     },
     {
      "kind": "rain_221",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_rain_221.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_rain_221.jpg"
     },
     {
      "kind": "124",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_124.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_124.jpg"
     },
     {
      "kind": "cloudtop",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_cloudtop.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_cloudtop.jpg"
     },
     {
      "kind": "enhanced_ir",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_enhanced_ir.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_enhanced_ir.jpg"
     },
     {
      "kind": "color_ir",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_color_ir.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_color_ir.jpg"
     },
     {
      "kind": "ir38",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_ir38.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_ir38.jpg"
     },
     {
      "kind": "mcir",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_mcir.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_mcir.jpg"
     },
     {
      "kind": "msa",
      "proj": "spread",
-     "file": "captures/METEOR-M2-3-20261113-051610/spread_msa.jpg"
+     "file": "captures/METEOR-M2-4-20261113-104511/spread_msa.jpg"
     }
    ],
    "mark": 1,
    "manual": true,
    "from": "home-base",
-   "peak_snr": 14.3,
+   "peak_snr": 19.1,
    "lock_s": 20,
    "timeline": [
-    [
-     0,
-     10
-    ],
     [
      1,
      20
     ]
    ],
-   "max_elev": 57,
-   "aos_az": 18,
-   "max_az": 98,
-   "direction": "southbound",
-   "pass_end": "2026-11-13T05:31:19+00:00",
+   "max_elev": 90,
+   "aos_az": 166,
+   "max_az": 210,
+   "direction": "northbound",
+   "pass_end": "2026-11-13T11:00:30+00:00",
+   "upright": true,
    "fixed": {
-    "rebuilt_pct": 1.7,
-    "blended_pct": 8.1,
+    "rebuilt_pct": 0.6,
+    "blended_pct": 0.2,
     "blacked_pct": 0.0,
-    "cloned_pct": 7.3
+    "cloned_pct": 0.0
    },
-   "overlays": true,
-   "plain": "captures/METEOR-M2-3-20261113-051610/plain_221.jpg"
+   "plain": "captures/METEOR-M2-4-20261113-104511/plain_221.jpg",
+   "overlays": true
   },
   {
    "id": "METEOR-M2-4-20261107-111512",
