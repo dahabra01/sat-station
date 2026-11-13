@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13T07:01:05+00:00",
+ "updated": "2026-11-13T07:06:58+00:00",
  "rule": "A pass only replaces ground already covered if its rating is the same or higher; same rating, the newer pass wins. Uncovered ground is filled by any pass. A pass left with only a small leftover of its picture hands it to other passes that cover the same ground.",
  "bounds": {
   "lon0": 25.0,

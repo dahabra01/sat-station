@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13T07:00:59+00:00",
+ "updated": "2026-11-13T07:06:53+00:00",
  "passes": [
   {
    "id": "METEOR-M2-3-20261113-051610",
@@ -76,6 +76,12 @@
    "max_az": 98,
    "direction": "southbound",
    "pass_end": "2026-11-13T05:31:19+00:00",
+   "fixed": {
+    "rebuilt_pct": 1.7,
+    "blended_pct": 8.1,
+    "blacked_pct": 0.0,
+    "cloned_pct": 7.3
+   },
    "overlays": true,
    "plain": "captures/METEOR-M2-3-20261113-051610/plain_221.jpg"
   },
