@@ -1,6 +1,84 @@
 {
- "updated": "2026-11-07T17:18:31+00:00",
+ "updated": "2026-11-13T07:00:59+00:00",
  "passes": [
+  {
+   "id": "METEOR-M2-3-20261113-051610",
+   "sat": "Meteor-M N2-3",
+   "day": "2026-11-13",
+   "start_utc": "2026-11-13T05:16:10+00:00",
+   "start_local": "09:16",
+   "thumb": "captures/METEOR-M2-3-20261113-051610/thumb.jpg",
+   "polar": null,
+   "images": [
+    {
+     "kind": "221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_221.jpg"
+    },
+    {
+     "kind": "rain_221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_rain_221.jpg"
+    },
+    {
+     "kind": "124",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_124.jpg"
+    },
+    {
+     "kind": "cloudtop",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_cloudtop.jpg"
+    },
+    {
+     "kind": "enhanced_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_enhanced_ir.jpg"
+    },
+    {
+     "kind": "color_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_color_ir.jpg"
+    },
+    {
+     "kind": "ir38",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_ir38.jpg"
+    },
+    {
+     "kind": "mcir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_mcir.jpg"
+    },
+    {
+     "kind": "msa",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-3-20261113-051610/spread_msa.jpg"
+    }
+   ],
+   "mark": 1,
+   "manual": true,
+   "from": "home-base",
+   "peak_snr": 14.3,
+   "lock_s": 20,
+   "timeline": [
+    [
+     0,
+     10
+    ],
+    [
+     1,
+     20
+    ]
+   ],
+   "max_elev": 57,
+   "aos_az": 18,
+   "max_az": 98,
+   "direction": "southbound",
+   "pass_end": "2026-11-13T05:31:19+00:00",
+   "overlays": true,
+   "plain": "captures/METEOR-M2-3-20261113-051610/plain_221.jpg"
+  },
   {
    "id": "METEOR-M2-4-20261107-111512",
    "sat": "Meteor-M N2-4",
