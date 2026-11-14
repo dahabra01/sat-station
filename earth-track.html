@@ -89,7 +89,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
   <div class="inner">
     <div class="eyebrow">Meteor-M2 3 + Meteor-M2 4 · live from orbit data</div>
     <h1>Earth <span>Track</span></h1>
-    <p class="lede">Where the satellites will take their pictures next. For every upcoming pass over Dubai, the coloured strip is the patch of Earth the satellite photographs while our antenna can hear it. The grey line is the same orbit before and after, out of reach. Spin the globe, tap a pass, press play. Tick Compare on two or more passes to see where their pictures overlap.</p>
+    <p class="lede">Where the satellites will take their pictures next. For every upcoming pass over Dubai, the coloured strip is the patch of Earth the satellite photographs while our antenna can hear it. The grey line is the same orbit before and after, out of reach. Spin the globe, tap a pass, press play. Tick Compare on two or more passes to see where their pictures overlap, or tap Next same track to find when a satellite will photograph the same strip again.</p>
   </div>
 </header>
 
@@ -127,7 +127,11 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
 .etCard.sel .etThumb{border-color:var(--c)}
 .etCard.armed{background:linear-gradient(90deg,rgba(127,240,182,.10),transparent 60%),var(--etCard);border-color:#3f8f68}
 .etCard.armed.sel{border-color:var(--c)}
-.etBtns{display:flex;gap:6px;margin-top:9px}
+.etBtns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
+.etBtns>.etCmpB:first-child{grid-column:1/-1}
+.etSameB{grid-column:1/-1;min-height:34px;border-radius:9px;border:1px dashed #6b5a9e;background:transparent;color:#d7c8ff;font:600 12.5px var(--etMono);cursor:pointer}
+.etSameB:hover{background:rgba(160,130,255,.08)}
+.etSameB:disabled{opacity:.6;cursor:progress}
 .etGo,.etCmpB{flex:1;min-height:36px;border-radius:9px;border:1px dashed #3f8f68;background:transparent;color:#9ff0c8;font:600 12.5px var(--etMono);cursor:pointer}
 .etCmpB{min-height:36px;border-radius:9px;border:1px dashed #44557a;background:transparent;color:#b9c4d8;font:600 12.5px var(--etMono);cursor:pointer}
 .etCmpB.on{border-style:solid;background:#1a2540;color:#fff;border-color:#8aa0d0}
@@ -138,9 +142,12 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
 #etToast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;background:#123a2a;color:#d9ffe9;border:1px solid #3f8f68;padding:10px 16px;border-radius:10px;font-size:13.5px;z-index:50;transition:all .25s;max-width:90vw;pointer-events:none}
 #etToast.show{opacity:1;transform:translate(-50%,0)}
 #etToast.bad{background:#3a1616;border-color:#8f3f3f;color:#ffdada}
+.etSameNote{margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--etLine);color:#d9ffe9}
 .etOver{font-size:12px;color:#d6deea;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.etT1{display:flex;align-items:center;justify-content:space-between}
+.etT1{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px 8px}
+.etT1>span{white-space:nowrap}
 .etSat{font-weight:700;color:var(--c);font-family:var(--etMono)}
+.etDate{margin-left:8px;font:600 11.5px var(--etMono);color:#cfd8e6;background:#1a2438;border-radius:5px;padding:1px 6px;vertical-align:1px}
 .etTime{font:600 13px var(--etMono)}
 .etMeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
 .etTag{font-size:11px;padding:2px 7px;border-radius:6px;background:#1a2438;color:#b9c4d8;line-height:1.5}
@@ -171,6 +178,8 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
       <span class="etChip on" data-f="M2-4"><span class="dot" style="background:var(--etM4)"></span>N2-4</span>
       <span class="etChip" id="etMine" hidden>🎯 Armed (0)</span>
       <span class="etChip on" id="etCmp" hidden>✕ Clear compare</span>
+      <span class="etChip on" id="etDayF">☀ Day</span>
+      <span class="etChip on" id="etNightF">☾ Night</span>
       <span class="etChip" id="etAll">Show all passes</span>
       <span class="etChip" id="etHome">Centre on Dubai</span>
     </div>

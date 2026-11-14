@@ -97,7 +97,7 @@ ET.start = function(cfg){
   const COL = cfg.colors || {"M2-3":"#5ee1e6","M2-4":"#e8b45c"};
   const NAME = {"M2-3":"Meteor-M N2-3","M2-4":"Meteor-M N2-4"};
   const short = s => s.replace("M2-","N2-");
-  let mineOnly=false, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
+  let mineOnly=false, dayF={day:true,night:true}, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
   const now = () => Date.now();
 
   // hearing circle radius on the ground for the mask elevation (satellite ~830 km up)
@@ -163,7 +163,7 @@ ET.start = function(cfg){
     gNight.attr("d",path(d3.geoCircle().center([ss[0]+180,-ss[1]]).radius(90)()));
     gHear.attr("d",path(d3.geoCircle().center([obs.lon,obs.lat]).radius(hearDeg())()));
     gOther.selectAll("*").remove(); gSel.selectAll("*").remove(); gHome.selectAll("*").remove(); gSat.selectAll("*").remove();
-    PASSES.filter(p=>p!==sel && filt.has(p.sat) && p.L>now() && (showAll||(mineOnly&&p.armed))).forEach(p=>drawPass(gOther,p,false));
+    PASSES.filter(p=>p!==sel && filt.has(p.sat) && p.L>now() && (p.day?dayF.day:dayF.night) && (showAll||(mineOnly&&p.armed))).forEach(p=>drawPass(gOther,p,false));
     gCmp.selectAll("*").remove();
     const C=PASSES.filter(p=>cmp.has(p.id));
     C.forEach(p=>{ const c=COL[p.sat];
@@ -220,6 +220,45 @@ ET.start = function(cfg){
     renderCards(); draw();
   }
   if($("etCmp")) $("etCmp").onclick=()=>{ cmp.clear(); compareChanged(); };
+  /* day / night filter */
+  function syncDN(){ const d=$("etDayF"), n=$("etNightF"); if(d) d.classList.toggle("on",dayF.day); if(n) n.classList.toggle("on",dayF.night); }
+  if($("etDayF")) $("etDayF").onclick=()=>{ if(dayF.day&&!dayF.night) return; dayF.day=!dayF.day; syncDN(); renderCards(); draw(); };
+  if($("etNightF")) $("etNightF").onclick=()=>{ if(dayF.night&&!dayF.day) return; dayF.night=!dayF.night; syncDN(); renderCards(); draw(); };
+
+  /* next same track: the next pass (either satellite) whose strip runs within ~1° (~100 km) of this one, same direction */
+  function crossLon(c){ // where the centre line crosses the station's latitude (or its point nearest to it)
+    for(let i=1;i<c.length;i++){ const a=c[i-1],b=c[i]; if((a[1]-obs.lat)*(b[1]-obs.lat)<=0 && a[1]!==b[1]){ const f=(obs.lat-a[1])/(b[1]-a[1]); return a[0]+f*(((b[0]-a[0]+540)%360)-180); } }
+    return c.reduce((m,p)=>Math.abs(p[1]-obs.lat)<Math.abs(m[1]-obs.lat)?p:m)[0];
+  }
+  const lonDiff=(a,b)=>Math.abs(((a-b+540)%360)-180);
+  async function nextSame(base,btn){
+    if(!base) return;
+    btn.disabled=true; btn.textContent="Searching 30 days…"; await new Promise(r=>setTimeout(r,30));
+    const bl=crossLon(base.center), ndir=base.dir; let best=null, closest=null;
+    try{
+      for(const [id,st] of Object.entries(sats)){
+        if(!filt.has(id)) continue;
+        for(const q of findPasses(st.rec, base.L+60e3, base.L+30*864e5, obs, mask)){
+          const c=[]; for(let t=q.rise;t<=q.stop;t+=20e3){ const x=sub(st.rec,t); if(x) c.push(x); }
+          if(c.length<2) continue;
+          const dir=c[c.length-1][1]>c[0][1]?"northbound":"southbound"; if(dir!==ndir) continue;
+          const day=sunEl((q.rise+q.stop)/2,c[Math.floor(c.length/2)])>5; if(!(day?dayF.day:dayF.night)) continue;
+          const d=lonDiff(crossLon(c),bl);
+          if(!closest||d<closest.d) closest={id,st,q,d};
+          if(d<=1.0 && (!best||q.rise<best.q.rise)) best={id,st,q,d};
+        }
+      }
+    }finally{ btn.disabled=false; btn.textContent="⟳ Next same track"; }
+    const hit=best||closest;
+    if(!hit){ toast("No pass found in the next 30 days with these filters. What to do: switch on both satellites or both Day and Night, then try again.",true); return; }
+    let p=PASSES.find(x=>x.sat===hit.id&&Math.abs(x.A-hit.q.rise)<5*60e3);
+    if(!p){ p=buildPass(hit.id,hit.st.rec,hit.q.rise,hit.q.stop,obs,{extra:true}); p.id=PASSES.reduce((m,x)=>Math.max(m,x.id),0)+1; PASSES.push(p); PASSES.sort((a,b)=>a.A-b.A); }
+    const km=Math.round(hit.d*111*Math.cos(obs.lat*deg)), days=(p.A-base.A)/864e5;
+    cmp.clear(); cmp.add(base.id); cmp.add(p.id); followLive=false; sel=p; compareChanged(); scrubT=p.A; syncSlider(); updateScrub();
+    if(window.innerWidth>900){ const c=document.querySelector(".etCard.sel"); if(c) c.scrollIntoView({block:"nearest",behavior:"smooth"}); }
+    $("etInfo").insertAdjacentHTML("afterbegin",`<div class="etSameNote"><b>${best?"Next same track":"No match within 100 km, so here's the closest"}:</b> <span style="color:${COL[p.sat]}">${NAME[p.sat]}</span>, ${fmtD(p.A)} ${fmtT(p.A)}, ${days<1.5?Math.round(days*24)+" hours":Math.round(days)+" days"} later. Its strip runs about ${km} km ${km<15?"from":"east or west of"} this one${p.day!==base.day?`, but in ${p.day?"daylight":"darkness"}`:""}.${p.extra?" It's beyond the pass list's 36 hours, so it's added to the list.":""}</div>`);
+  }
+
   /* small footprint map for each pass card */
   const LITE = window.ET_WORLD_LITE || ET_WORLD;
   const liteLand = topojson.feature(LITE, LITE.objects.countries);
@@ -257,7 +296,7 @@ ET.start = function(cfg){
   /* list */
   function renderCards(){
     const box=$("etCards"); box.innerHTML=""; let lastDay="";
-    const list=PASSES.filter(p=>filt.has(p.sat) && p.L>now()-30*60e3 && (!mineOnly||p.armed));
+    const list=PASSES.filter(p=>filt.has(p.sat) && p.L>now()-30*60e3 && (!mineOnly||p.armed) && (p.day?dayF.day:dayF.night));
     if(!list.length && mineOnly){ box.innerHTML=`<div class="etEmpty">No passes armed yet. What to do: tap <b>Arm</b> on a pass you want to catch.</div>`; return; }
     if(!list.length){ box.innerHTML=`<div class="etEmpty">No passes found in the next ${cfg.hours||36} hours. What to do: check the orbit data is fresh (see the note below), then reload.</div>`; return; }
     list.forEach(p=>{
@@ -268,7 +307,7 @@ ET.start = function(cfg){
       el.className="etCard"+(sel===p?" sel":"")+(done?" done":"")+(p.armed?" armed":"")+(cmp.has(p.id)?" cmp":"");
       el.style.setProperty("--c",COL[p.sat]);
       const plan = p.would ? `<span class="etTag ${p.would==='skip'?'':'etPlan'}" title="${(p.why||'').replace(/"/g,'&quot;')}">Catcher: ${p.would}</span>` : "";
-      el.innerHTML=`<div class="etRow">${cfg.thumbs===false?'':thumb(p)}<div class="etBody"><div class="etT1"><span class="etSat">${short(p.sat)}</span><span class="etTime">${fmtT(p.A)} – ${fmtT(p.L)}</span></div>
+      el.innerHTML=`<div class="etRow">${cfg.thumbs===false?'':thumb(p)}<div class="etBody"><div class="etT1"><span><span class="etSat">${short(p.sat)}</span><span class="etDate">${new Date(p.A).toLocaleDateString("en-GB",{...TZ,weekday:"short",day:"numeric",month:"short"})}</span></span><span class="etTime">${fmtT(p.A)} – ${fmtT(p.L)}</span></div>
         <div class="etMeta">${p.day?'<span class="etTag etSun">☀ Daylight · colour</span>':'<span class="etTag etMoon">☾ Night · infrared</span>'}
         <span class="etTag">${Math.round(p.maxel)}° high</span><span class="etTag">${p.dur} min</span>
         <span class="etTag">${p.dir==="northbound"?"↑ going north":"↓ going south"}</span>
@@ -276,8 +315,9 @@ ET.start = function(cfg){
         <div class="etOver">📍 ${crosses(p)}</div>
         <div class="etWhen">${until}${p.side?` · passes to the ${p.side} of you`:''}</div>
         <div class="etBar"><div style="width:${Math.min(100,p.maxel/90*100)}%"></div></div>
-        <div class="etBtns">${cfg.mark&&!done?`<button type="button" class="etGo${p.armed?' on':''}" aria-pressed="${p.armed}">${p.armed?'✓ Armed':'🎯 Arm'}</button>`:''}<button type="button" class="etCmpB${cmp.has(p.id)?' on':''}" aria-pressed="${cmp.has(p.id)}">${cmp.has(p.id)?'☑ Comparing':'☐ Compare'}</button></div></div></div>`;
+        <div class="etBtns">${cfg.mark&&!done?`<button type="button" class="etGo${p.armed?' on':''}" aria-pressed="${p.armed}">${p.armed?'✓ Armed':'🎯 Arm'}</button>`:''}<button type="button" class="etCmpB${cmp.has(p.id)?' on':''}" aria-pressed="${cmp.has(p.id)}">${cmp.has(p.id)?'☑ Comparing':'☐ Compare'}</button><button type="button" class="etSameB" title="Find the next pass whose strip runs within about 100 km of this one, same direction">⟳ Next same track</button></div></div></div>`;
       el.onclick=()=>{followLive=false;select(p,true);};
+      el.querySelector(".etSameB").onclick=e=>{ e.stopPropagation(); nextSame(p,e.currentTarget); };
       el.querySelector(".etCmpB").onclick=e=>{ e.stopPropagation(); if(cmp.has(p.id)) cmp.delete(p.id); else cmp.add(p.id); compareChanged(); };
       const gb=el.querySelector(".etGo");
       if(gb) gb.onclick=async e=>{ e.stopPropagation(); gb.disabled=true; gb.textContent=p.armed?"Disarming…":"Arming…";
