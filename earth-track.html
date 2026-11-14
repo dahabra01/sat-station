@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Earth Track · Capt. Abu Zaid Sat Station</title>
+<meta name="description" content="A live globe showing the strip of Earth each upcoming Meteor satellite pass photographs while our Dubai ground station can hear it.">
+<meta name="theme-color" content="#06101c">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Capt. Abu Zaid Sat Station">
+<meta property="og:title" content="Earth Track">
+<meta property="og:description" content="What Meteor N2-3 and N2-4 will photograph on every upcoming pass over Dubai.">
+<meta property="og:url" content="https://sat.dahabra.com/earth-track.html">
+<meta property="og:image" content="https://sat.dahabra.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<script data-goatcounter="https://dahabra.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Same single-dark identity as the Station, Captures and Big Picture pages. */
+
+/* Same single-dark identity as the Station and Captures pages. */
+:root{
+  --night:#06101c;--deep:#0b1a2c;--band:#0e2136;--rule:#1f3a57;
+  --cloud:#eef3f8;--mist:#9db0c6;--sand:#e8b45c;--signal:#5ee1e6;--ok:#6fdc9c;--warn:#f0a35a;--track:#3a5a7c;--off:#14283f;
+  --m3:#5ee1e6;--m4:#e8b45c;
+  --f-display:"Big Shoulders Display","Arial Narrow","Roboto Condensed",Impact,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --gutter-l:max(16px,env(safe-area-inset-left,0px));
+  --gutter-r:max(16px,env(safe-area-inset-right,0px));
+  color-scheme:dark;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{background:var(--night);color:var(--cloud)}
+body{margin:0;font-family:var(--f-body);font-size:17px;line-height:1.6}
+img{max-width:100%}[hidden]{display:none!important}
+a{color:var(--signal)}
+.inner{max-width:1160px;margin:0 auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
+.eyebrow{font:600 12px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--sand)}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:.95;margin:0;letter-spacing:.01em;text-wrap:balance;text-transform:uppercase}
+p{margin:0;max-width:62ch}
+.lede{color:var(--mist);font-size:19px}
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+
+.bar{border-bottom:1px solid var(--rule)}
+.bar .inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px;flex-wrap:wrap}
+.home{display:flex;align-items:center;gap:10px;color:var(--cloud);text-decoration:none;font:800 20px var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.home svg{width:34px;height:34px;flex:none}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs a{font:600 12px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mist);text-decoration:none;padding:7px 11px;border-radius:8px;border:1px solid transparent}
+.tabs a:hover{color:var(--cloud)}
+.tabs a[aria-current]{color:var(--cloud);border-color:var(--rule);background:var(--deep)}
+
+.top{padding-block:52px 36px;border-bottom:1px solid var(--rule)}
+.top .inner{display:flex;flex-direction:column;gap:16px}
+.top h1{font-size:clamp(56px,11vw,128px);font-weight:900;line-height:.85;overflow-wrap:break-word}
+.top h1 span{color:var(--sand);display:block}
+
+section{padding-block:52px;border-bottom:1px solid var(--rule)}
+.head{display:flex;flex-direction:column;gap:12px;margin-bottom:26px}
+.head h2{font-size:clamp(36px,5.5vw,60px)}
+
+footer{padding-block:36px 52px;color:var(--mist);font-size:14px}
+footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+
+.etSec{padding-block:28px 52px}
+.etSec .inner{max-width:1400px}
+:root{--etLine:var(--rule);--etPanel:var(--deep);--etCard:var(--band);--etMute:var(--mist);--etMono:var(--f-mono);--etM3:var(--m3);--etM4:var(--m4);--etGlobeH:min(78vh,820px);--etSpace:#050c16}
+.etList h2{font-family:var(--f-display);font-size:24px;text-transform:uppercase}
+.etWrap{font-size:15px;line-height:1.5}
+.etWrap p{max-width:none}
+</style>
+</head>
+<body>
+
+<nav class="bar" aria-label="Site">
+  <div class="inner">
+    <a class="home" href="/"><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#0e2136"/><path d="M30 420 C 90 120, 422 120, 482 420" fill="none" stroke="#e8b45c" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 28"/><g transform="translate(256 178) rotate(-14)"><rect x="-142" y="-24" width="98" height="48" rx="4" fill="#20416a" stroke="#5ee1e6" stroke-width="9"/><rect x="44" y="-24" width="98" height="48" rx="4" fill="#20416a" stroke="#5ee1e6" stroke-width="9"/><rect x="-32" y="-32" width="64" height="64" rx="8" fill="#eef3f8"/></g><g stroke="#e8b45c" stroke-width="18" stroke-linecap="round" fill="none"><path d="M256 404 L176 358 M256 404 L336 358 M256 404 V440"/></g></svg>Capt. Abu Zaid Sat Station</a>
+    <div class="tabs"><a href="/">Station</a><a href="/captures.html">Captures</a><a href="/footprint.html">Big Picture</a><a href="/earth-track.html" aria-current="page">Earth Track</a></div>
+  </div>
+</nav>
+
+<header class="top">
+  <div class="inner">
+    <div class="eyebrow">Meteor-M2 3 + Meteor-M2 4 · live from orbit data</div>
+    <h1>Earth <span>Track</span></h1>
+    <p class="lede">Where the satellites will take their pictures next. For every upcoming pass over Dubai, the coloured strip is the patch of Earth the satellite photographs while our antenna can hear it. The grey line is the same orbit before and after, out of reach. Spin the globe, tap a pass, press play.</p>
+  </div>
+</header>
+
+<section class="etSec" id="track">
+  <div class="inner">
+<style>
+.etWrap,.etWrap *{box-sizing:border-box}
+.etWrap{display:grid;grid-template-columns:1fr 340px;gap:0;border:1px solid var(--etLine);border-radius:var(--etRad,14px);overflow:hidden;background:var(--etPanel)}
+.etGlobeWrap{position:relative;min-height:600px;height:var(--etGlobeH,calc(100vh - 160px));background:var(--etSpace,#070b14)}
+#etGlobe{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#etGlobe:active{cursor:grabbing}
+.etTools{position:absolute;right:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:70%}
+.etChip{background:rgba(14,21,36,.9);border:1px solid var(--etLine);color:#cdd6e6;padding:6px 10px;border-radius:999px;font:600 12px var(--etMono);cursor:pointer;user-select:none;min-height:32px;display:inline-flex;align-items:center}
+.etChip.on{border-color:#4a5a7a;background:#1a2540;color:#fff}
+.etChip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.etClock{position:absolute;left:12px;top:12px;font:600 12px var(--etMono);color:#cfe;background:rgba(14,21,36,.9);border:1px solid var(--etLine);padding:6px 10px;border-radius:8px}
+.etLegend{position:absolute;left:12px;top:52px;background:rgba(14,21,36,.88);border:1px solid var(--etLine);border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.85;color:#d6deea}
+.etLegend i{display:inline-block;width:22px;height:9px;border-radius:2px;margin-right:7px;vertical-align:middle}
+.etScrub{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;width:min(520px,64%);background:rgba(14,21,36,.92);border:1px solid var(--etLine);border-radius:12px;padding:10px 14px}
+.etScrub .row{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--etMute);gap:8px}
+.etScrub b{color:#fff;font-weight:600}
+.etScrub input{width:100%;margin:8px 0 2px;accent-color:#5ee1e6}
+.etPlay{background:#1d2a47;border:1px solid #2c3b5e;color:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font:600 12px var(--etMono)}
+.etList{border-left:1px solid var(--etLine);padding:14px 12px;overflow:auto;max-height:var(--etGlobeH,calc(100vh - 160px));min-height:600px}
+.etList h2{font-size:16px;margin:2px 4px 4px}
+.etHint{color:var(--etMute);font-size:12.5px;margin:0 4px 8px;line-height:1.5}
+.etDay{color:var(--etMute);font:600 11px var(--etMono);letter-spacing:.08em;text-transform:uppercase;margin:14px 4px 6px}
+.etCard{background:var(--etCard);border:1px solid var(--etLine);border-radius:12px;padding:11px 12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.etCard:hover{border-color:#44557a}
+.etCard.sel{border-color:var(--c);box-shadow:0 0 0 1px var(--c) inset}
+.etCard.done{opacity:.45}
+.etT1{display:flex;align-items:center;justify-content:space-between}
+.etSat{font-weight:700;color:var(--c);font-family:var(--etMono)}
+.etTime{font:600 13px var(--etMono)}
+.etMeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.etTag{font-size:11px;padding:2px 7px;border-radius:6px;background:#1a2438;color:#b9c4d8;line-height:1.5}
+.etSun{background:#3a2e10;color:#ffd77a}.etMoon{background:#1b2140;color:#aab6ff}.etBest{background:#123a2a;color:#7ff0b6}.etPlan{background:#10303a;color:#8fe6f0}
+.etWhen{font-size:12px;color:var(--etMute);margin-top:6px}
+.etLive{color:#7ff0b6}
+.etBar{height:4px;border-radius:2px;background:#1d273b;margin-top:8px;overflow:hidden}.etBar>div{height:100%;background:var(--c)}
+.etInfo{margin:12px 4px 0;padding:12px;border-radius:10px;background:rgba(0,0,0,.25);border:1px dashed var(--etLine);color:#c3cdda;font-size:12.5px;line-height:1.6}
+.etNote{font-size:11.5px;color:var(--etMute);margin:12px 4px;line-height:1.55}
+.etWarn{color:#f0a35a}
+.etEmpty{padding:14px;color:var(--etMute);font-size:13px}
+@media (max-width:900px){
+  .etWrap{grid-template-columns:1fr}
+  .etGlobeWrap{height:auto;min-height:0}
+  #etGlobe{height:400px}
+  .etList{border-left:0;border-top:1px solid var(--etLine);max-height:none;min-height:0}
+  .etLegend{display:none}
+  .etTools{top:48px;right:8px;max-width:96%}
+  .etScrub{position:static;transform:none;width:auto;margin:0 10px 10px}
+}
+</style>
+<div class="etWrap">
+  <div class="etGlobeWrap">
+    <svg id="etGlobe" role="img" aria-label="Globe showing what each Meteor pass photographs"></svg>
+    <span class="etClock" id="etClock">Dubai --:--</span>
+    <div class="etTools">
+      <span class="etChip on" data-f="M2-3"><span class="dot" style="background:var(--etM3)"></span>N2-3</span>
+      <span class="etChip on" data-f="M2-4"><span class="dot" style="background:var(--etM4)"></span>N2-4</span>
+      <span class="etChip" id="etAll">Show all passes</span>
+      <span class="etChip" id="etHome">Centre on Dubai</span>
+    </div>
+    <div class="etLegend">
+      <div><i style="background:color-mix(in srgb,var(--etM3) 45%,transparent);border:1px solid var(--etM3)"></i>N2-3 picture strip</div>
+      <div><i style="background:color-mix(in srgb,var(--etM4) 45%,transparent);border:1px solid var(--etM4)"></i>N2-4 picture strip</div>
+      <div><i style="background:repeating-linear-gradient(90deg,#7d8698 0 5px,transparent 5px 8px);height:3px"></i>Track beyond the pass</div>
+      <div><i style="border:1.5px dashed #ff5c7a;background:none;height:10px"></i>What the station can hear</div>
+      <div><i style="background:rgba(0,0,0,.55)"></i>Night side</div>
+    </div>
+    <div class="etScrub">
+      <div class="row"><span id="etScrubName">Working out the passes…</span><button class="etPlay" id="etPlay" type="button">▶ Play pass</button></div>
+      <input type="range" id="etSlider" min="0" max="1000" value="0" aria-label="Move the satellite along the pass">
+      <div class="row"><span id="etScrubT">—</span><span id="etScrubLeft">—</span></div>
+    </div>
+  </div>
+  <aside class="etList">
+    <h2>Upcoming passes · <span id="etWhere"></span></h2>
+    <p class="etHint">Tap a pass to spin the globe to it. Each coloured strip is the patch of Earth the satellite photographs while the station hears it; grey is the same orbit before and after. Times are Dubai time.</p>
+    <div id="etCards"></div>
+    <div class="etInfo" id="etInfo"></div>
+    <p class="etNote"><span id="etSrc"></span> Picture strip shown about 2,800 km wide, the full width of Meteor's MSU-MR camera. Night passes give infrared pictures only.</p>
+  </aside>
+</div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="inner">
+    <span>Capt. Abu Zaid Sat Station · Dubai · <a href="/captures.html">Captures</a> · <a href="/footprint.html">Big Picture Sat Map</a></span>
+    <span>Orbits from <a href="https://celestrak.org" target="_blank" rel="noopener">CelesTrak</a>, refreshed daily</span>
+  </div>
+</footer>
+
+<script src="/earth/d3.min.js"></script>
+<script src="/earth/topojson-client.min.js"></script>
+<script src="/earth/world-50m.js"></script>
+<script src="/earth/satellite.min.js"></script>
+<script src="/earth/engine.js"></script>
+<script>
+ET.start({
+  obs:{lat:25.20,lon:55.27,name:"Dubai"}, mask:10, hours:36,
+  colors:{"M2-3":"#5ee1e6","M2-4":"#e8b45c"}, ocean1:"#12304f", ocean2:"#06101c",
+  getTLE: async()=>{const r=await fetch('/earth/tle.txt',{cache:'no-cache'}); return r.ok? r.text():'';},
+  fallbackTLE:`METEOR-M2 3
+1 57166U 23091A   26318.52950400 -.00000004  00000+0  17032-4 0  9996
+2 57166  98.5896  10.2810 0005079  93.7407 266.4353 14.24056477175917
+METEOR-M2 4
+1 59051U 24039A   26318.50354247  .00000012  00000+0  25301-4 0  9995
+2 59051  98.7245 276.0605 0008145  93.9890 266.2219 14.22443225140630
+`,
+  staleFix:"come back tomorrow, the site refreshes its orbits once a day"
+});
+</script>
+</body>
+</html>
