@@ -173,7 +173,7 @@ ET.start = function(cfg){
       const m=p.center[Math.floor(p.center.length*0.15)];
       if(visible(m)){ const xy=proj(m); gCmp.append("text").attr("x",xy[0]+6).attr("y",xy[1]).text(`${short(p.sat)} ${fmtT(p.A)}`)
         .attr("fill","#fff").attr("font-size",11).attr("font-weight",700).attr("paint-order","stroke").attr("stroke","#070b14").attr("stroke-width",3); } });
-    if(sel && filt.has(sel.sat) && !C.length) drawPass(gSel,sel,true);
+    if(sel && filt.has(sel.sat) && !(C.length && cmp.has(sel.id))) drawPass(gSel,sel,true);   // the tapped tile always shows, on top of any comparison
     const H0=[obs.lon,obs.lat];
     if(visible(H0)){ const h=proj(H0);
       gHome.append("circle").attr("cx",h[0]).attr("cy",h[1]).attr("r",9).attr("fill","none").attr("stroke","#ff5c7a").attr("opacity",.5);
@@ -328,12 +328,12 @@ ET.start = function(cfg){
     });
   }
   function info(p){
-    if(cmp.size>=2) return;
     const ns=p.dir==="northbound";
     $("etInfo").innerHTML=`<b style="color:${COL[p.sat]}">${NAME[p.sat]}</b> · ${fmtD(p.A)}, ${fmtT(p.A)} to ${fmtT(p.L)} (${p.dur} min).<br>
       It comes in from the ${ns?"south":"north"} and leaves to the ${ns?"north":"south"}, about ${Math.round(p.maxel)}° above your horizon at its highest${p.side?`, off to your ${p.side}`:''}.<br>
       ${p.day?"The sun is up along this strip, so expect a full colour picture.":"This strip is in darkness, so expect infrared (heat) pictures only: clouds show, land detail is faint."}
-      ${p.why?`<br><span style="opacity:.8">Catcher's plan: ${p.would}, ${p.why}</span>`:''}`;
+      ${p.why?`<br><span style="opacity:.8">Catcher's plan: ${p.would}, ${p.why}</span>`:''}
+      ${cmp.size>=2&&!cmp.has(p.id)?`<br><span style="opacity:.8">Also showing ${cmp.size} compared passes underneath. Tap ✕ Clear compare to hide them.</span>`:''}`;
   }
   function select(p,spin){
     sel=p; const t=now(); scrubT = (p.A<=t&&t<=p.L)? t : p.A; syncSlider();
