@@ -1,6 +1,87 @@
 {
- "updated": "2026-11-13T16:44:45+00:00",
+ "updated": "2026-11-14T13:15:06+00:00",
  "passes": [
+  {
+   "id": "METEOR-M2-4-20261114-102343",
+   "sat": "Meteor-M N2-4",
+   "day": "2026-11-14",
+   "start_utc": "2026-11-14T10:23:43+00:00",
+   "start_local": "14:23",
+   "thumb": "captures/METEOR-M2-4-20261114-102343/thumb.jpg",
+   "polar": null,
+   "images": [
+    {
+     "kind": "221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_221.jpg"
+    },
+    {
+     "kind": "rain_221",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_rain_221.jpg"
+    },
+    {
+     "kind": "124",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_124.jpg"
+    },
+    {
+     "kind": "cloudtop",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_cloudtop.jpg"
+    },
+    {
+     "kind": "enhanced_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_enhanced_ir.jpg"
+    },
+    {
+     "kind": "color_ir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_color_ir.jpg"
+    },
+    {
+     "kind": "ir38",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_ir38.jpg"
+    },
+    {
+     "kind": "mcir",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_mcir.jpg"
+    },
+    {
+     "kind": "msa",
+     "proj": "spread",
+     "file": "captures/METEOR-M2-4-20261114-102343/spread_msa.jpg"
+    }
+   ],
+   "mark": 1,
+   "manual": true,
+   "from": "home-base",
+   "peak_snr": 13.2,
+   "lock_s": 30,
+   "timeline": [
+    [
+     1,
+     30
+    ]
+   ],
+   "max_elev": 53,
+   "aos_az": 155,
+   "max_az": 73,
+   "direction": "northbound",
+   "pass_end": "2026-11-14T10:38:47+00:00",
+   "upright": true,
+   "fixed": {
+    "rebuilt_pct": 5.4,
+    "blended_pct": 11.0,
+    "blacked_pct": 0.0,
+    "cloned_pct": 10.1
+   },
+   "plain": "captures/METEOR-M2-4-20261114-102343/plain_221.jpg",
+   "overlays": true
+  },
   {
    "id": "METEOR-M2-4-20261113-104511",
    "sat": "Meteor-M N2-4",
