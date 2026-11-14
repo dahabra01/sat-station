@@ -97,7 +97,7 @@ ET.start = function(cfg){
   const COL = cfg.colors || {"M2-3":"#5ee1e6","M2-4":"#e8b45c"};
   const NAME = {"M2-3":"Meteor-M N2-3","M2-4":"Meteor-M N2-4"};
   const short = s => s.replace("M2-","N2-");
-  let mineOnly=false, dayF={day:true,night:true}, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
+  let autoCmp=false, mineOnly=false, dayF={day:true,night:true}, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
   const now = () => Date.now();
 
   // hearing circle radius on the ground for the mask elevation (satellite ~830 km up)
@@ -219,7 +219,7 @@ ET.start = function(cfg){
     } else if(sel) info(sel);
     renderCards(); draw();
   }
-  if($("etCmp")) $("etCmp").onclick=()=>{ cmp.clear(); compareChanged(); };
+  if($("etCmp")) $("etCmp").onclick=()=>{ cmp.clear(); autoCmp=false; compareChanged(); };
   /* day / night filter */
   function syncDN(){ const d=$("etDayF"), n=$("etNightF"); if(d) d.classList.toggle("on",dayF.day); if(n) n.classList.toggle("on",dayF.night); }
   if($("etDayF")) $("etDayF").onclick=()=>{ if(dayF.day&&!dayF.night) return; dayF.day=!dayF.day; syncDN(); renderCards(); draw(); };
@@ -254,7 +254,7 @@ ET.start = function(cfg){
     let p=PASSES.find(x=>x.sat===hit.id&&Math.abs(x.A-hit.q.rise)<5*60e3);
     if(!p){ p=buildPass(hit.id,hit.st.rec,hit.q.rise,hit.q.stop,obs,{extra:true}); p.id=PASSES.reduce((m,x)=>Math.max(m,x.id),0)+1; PASSES.push(p); PASSES.sort((a,b)=>a.A-b.A); }
     const km=Math.round(hit.d*111*Math.cos(obs.lat*deg)), days=(p.A-base.A)/864e5;
-    cmp.clear(); cmp.add(base.id); cmp.add(p.id); followLive=false; sel=p; compareChanged(); scrubT=p.A; syncSlider(); updateScrub();
+    cmp.clear(); cmp.add(base.id); cmp.add(p.id); autoCmp=true; followLive=false; sel=p; compareChanged(); scrubT=p.A; syncSlider(); updateScrub();
     if(window.innerWidth>900){ const c=document.querySelector(".etCard.sel"); if(c) c.scrollIntoView({block:"nearest",behavior:"smooth"}); }
     $("etInfo").insertAdjacentHTML("afterbegin",`<div class="etSameNote"><b>${best?"Next same track":"No match within 100 km, so here's the closest"}:</b> <span style="color:${COL[p.sat]}">${NAME[p.sat]}</span>, ${fmtD(p.A)} ${fmtT(p.A)}, ${days<1.5?Math.round(days*24)+" hours":Math.round(days)+" days"} later. Its strip runs about ${km} km ${km<15?"from":"east or west of"} this one${p.day!==base.day?`, but in ${p.day?"daylight":"darkness"}`:""}.${p.extra?" It's beyond the pass list's 36 hours, so it's added to the list.":""}</div>`);
   }
@@ -316,9 +316,11 @@ ET.start = function(cfg){
         <div class="etWhen">${until}${p.side?` · passes to the ${p.side} of you`:''}</div>
         <div class="etBar"><div style="width:${Math.min(100,p.maxel/90*100)}%"></div></div>
         <div class="etBtns">${cfg.mark&&!done?`<button type="button" class="etGo${p.armed?' on':''}" aria-pressed="${p.armed}">${p.armed?'✓ Armed':'🎯 Arm'}</button>`:''}<button type="button" class="etCmpB${cmp.has(p.id)?' on':''}" aria-pressed="${cmp.has(p.id)}">${cmp.has(p.id)?'☑ Comparing':'☐ Compare'}</button><button type="button" class="etSameB" title="Find the next pass whose strip runs within about 100 km of this one, same direction">⟳ Next same track</button></div></div></div>`;
-      el.onclick=()=>{followLive=false;select(p,true);};
+      el.onclick=()=>{ followLive=false;
+        if(autoCmp){ cmp.clear(); autoCmp=false; const b=$("etCmp"); if(b) b.hidden=true; }   // Next same track's pairing is temporary
+        select(p,true); };
       el.querySelector(".etSameB").onclick=e=>{ e.stopPropagation(); nextSame(p,e.currentTarget); };
-      el.querySelector(".etCmpB").onclick=e=>{ e.stopPropagation(); if(cmp.has(p.id)) cmp.delete(p.id); else cmp.add(p.id); compareChanged(); };
+      el.querySelector(".etCmpB").onclick=e=>{ e.stopPropagation(); autoCmp=false; if(cmp.has(p.id)) cmp.delete(p.id); else cmp.add(p.id); compareChanged(); };
       const gb=el.querySelector(".etGo");
       if(gb) gb.onclick=async e=>{ e.stopPropagation(); gb.disabled=true; gb.textContent=p.armed?"Disarming…":"Arming…";
         try{ const r=await cfg.mark(p,!p.armed); p.armed = r===undefined? !p.armed : !!r; toast(p.armed?`Armed: ${short(p.sat)} ${fmtD(p.A)} ${fmtT(p.A)}. ${cfg.markNote||""}`:"Disarmed. It goes back to what trip mode says."); }
