@@ -15,7 +15,7 @@ jobs:
         run: |
           set -e
           curl -fsS -m 30 "https://celestrak.org/NORAD/elements/gp.php?NAME=METEOR-M2&FORMAT=tle" -o /tmp/all.tle
-          awk '/^METEOR-M2 [34] *$/{n=3} n-->0' /tmp/all.tle | tr -d '\r' > /tmp/new.tle
+          tr -d '\r' < /tmp/all.tle | awk '/^METEOR-M2 [34] *$/{n=3} n-->0' | sed 's/ *$//' > /tmp/new.tle
           [ "$(grep -c '^1 ' /tmp/new.tle)" = "2" ] || { echo "Didn't get both satellites; keeping the old file"; cat /tmp/all.tle; exit 1; }
           cp /tmp/new.tle earth/tle.txt
       - name: Commit if changed
