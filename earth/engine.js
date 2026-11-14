@@ -195,7 +195,7 @@ ET.start = function(cfg){
   function toast(t,bad){ let el=$("etToast"); if(!el){ el=document.createElement("div"); el.id="etToast"; document.body.appendChild(el); }
     el.textContent=t; el.className=bad?"bad show":"show"; clearTimeout(el._t); el._t=setTimeout(()=>el.className=el.className.replace("show",""),4200); }
   function updateMine(){ const c=$("etMine"); if(!c) return; const n=PASSES.filter(p=>p.armed&&p.L>now()).length;
-    c.hidden=!cfg.mark; c.textContent=`🎯 My trips (${n})`; c.classList.toggle("on",mineOnly); }
+    c.hidden=!cfg.mark; c.textContent=`🎯 Armed (${n})`; c.classList.toggle("on",mineOnly); }
   if($("etMine")) $("etMine").onclick=()=>{ mineOnly=!mineOnly; updateMine(); renderCards(); };
   function overlapKm2(C){
     // grid sample (0.5°) over the strips' bounds: ground seen by 2 or more of the compared passes
@@ -258,7 +258,7 @@ ET.start = function(cfg){
   function renderCards(){
     const box=$("etCards"); box.innerHTML=""; let lastDay="";
     const list=PASSES.filter(p=>filt.has(p.sat) && p.L>now()-30*60e3 && (!mineOnly||p.armed));
-    if(!list.length && mineOnly){ box.innerHTML=`<div class="etEmpty">No passes marked yet. What to do: tap <b>Go out</b> on a pass you want to catch.</div>`; return; }
+    if(!list.length && mineOnly){ box.innerHTML=`<div class="etEmpty">No passes armed yet. What to do: tap <b>Arm</b> on a pass you want to catch.</div>`; return; }
     if(!list.length){ box.innerHTML=`<div class="etEmpty">No passes found in the next ${cfg.hours||36} hours. What to do: check the orbit data is fresh (see the note below), then reload.</div>`; return; }
     list.forEach(p=>{
       const d=fmtD(p.A); if(d!==lastDay){lastDay=d; box.insertAdjacentHTML("beforeend",`<div class="etDay">${d}</div>`);}
@@ -276,12 +276,12 @@ ET.start = function(cfg){
         <div class="etOver">📍 ${crosses(p)}</div>
         <div class="etWhen">${until}${p.side?` · passes to the ${p.side} of you`:''}</div>
         <div class="etBar"><div style="width:${Math.min(100,p.maxel/90*100)}%"></div></div>
-        <div class="etBtns">${cfg.mark&&!done?`<button type="button" class="etGo${p.armed?' on':''}" aria-pressed="${p.armed}">${p.armed?'✓ Going out':'🎯 Go out'}</button>`:''}<button type="button" class="etCmpB${cmp.has(p.id)?' on':''}" aria-pressed="${cmp.has(p.id)}">${cmp.has(p.id)?'☑ Comparing':'☐ Compare'}</button></div></div></div>`;
+        <div class="etBtns">${cfg.mark&&!done?`<button type="button" class="etGo${p.armed?' on':''}" aria-pressed="${p.armed}">${p.armed?'✓ Armed':'🎯 Arm'}</button>`:''}<button type="button" class="etCmpB${cmp.has(p.id)?' on':''}" aria-pressed="${cmp.has(p.id)}">${cmp.has(p.id)?'☑ Comparing':'☐ Compare'}</button></div></div></div>`;
       el.onclick=()=>{followLive=false;select(p,true);};
       el.querySelector(".etCmpB").onclick=e=>{ e.stopPropagation(); if(cmp.has(p.id)) cmp.delete(p.id); else cmp.add(p.id); compareChanged(); };
       const gb=el.querySelector(".etGo");
-      if(gb) gb.onclick=async e=>{ e.stopPropagation(); gb.disabled=true; gb.textContent=p.armed?"Unmarking…":"Marking…";
-        try{ const r=await cfg.mark(p,!p.armed); p.armed = r===undefined? !p.armed : !!r; toast(p.armed?`Marked: ${short(p.sat)} ${fmtD(p.A)} ${fmtT(p.A)}. ${cfg.markNote||""}`:"Unmarked. It goes back to what trip mode says."); }
+      if(gb) gb.onclick=async e=>{ e.stopPropagation(); gb.disabled=true; gb.textContent=p.armed?"Disarming…":"Arming…";
+        try{ const r=await cfg.mark(p,!p.armed); p.armed = r===undefined? !p.armed : !!r; toast(p.armed?`Armed: ${short(p.sat)} ${fmtD(p.A)} ${fmtT(p.A)}. ${cfg.markNote||""}`:"Disarmed. It goes back to what trip mode says."); }
         catch(err){ toast("Couldn't save that. What to do: check you're connected to the station, then tap again.",true); }
         renderCards(); updateMine(); };
       box.appendChild(el);
