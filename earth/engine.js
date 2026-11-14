@@ -97,7 +97,7 @@ ET.start = function(cfg){
   const COL = cfg.colors || {"M2-3":"#5ee1e6","M2-4":"#e8b45c"};
   const NAME = {"M2-3":"Meteor-M N2-3","M2-4":"Meteor-M N2-4"};
   const short = s => s.replace("M2-","N2-");
-  let obs = cfg.obs, mask = cfg.mask||10, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
+  let mineOnly=false, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
   const now = () => Date.now();
 
   // hearing circle radius on the ground for the mask elevation (satellite ~830 km up)
@@ -124,7 +124,7 @@ ET.start = function(cfg){
   const gBord = svg.append("path").attr("fill","none").attr("stroke","#4b6656").attr("stroke-width",.35);
   const gNight = svg.append("path").attr("fill","rgba(0,0,8,.5)");
   const gHear = svg.append("path").attr("fill","rgba(255,92,122,.06)").attr("stroke","#ff5c7a").attr("stroke-width",1.4).attr("stroke-dasharray","5 4");
-  const gOther = svg.append("g"), gSel = svg.append("g"), gHome = svg.append("g"), gSat = svg.append("g");
+  const gOther = svg.append("g"), gCmp = svg.append("g").style("isolation","isolate"), gSel = svg.append("g"), gHome = svg.append("g"), gSat = svg.append("g");
   let W,H,zoomK=1;
   function resize(){
     const box = document.querySelector(".etGlobeWrap").getBoundingClientRect();
@@ -163,8 +163,17 @@ ET.start = function(cfg){
     gNight.attr("d",path(d3.geoCircle().center([ss[0]+180,-ss[1]]).radius(90)()));
     gHear.attr("d",path(d3.geoCircle().center([obs.lon,obs.lat]).radius(hearDeg())()));
     gOther.selectAll("*").remove(); gSel.selectAll("*").remove(); gHome.selectAll("*").remove(); gSat.selectAll("*").remove();
-    if(showAll) PASSES.filter(p=>p!==sel && filt.has(p.sat) && p.L>now()).forEach(p=>drawPass(gOther,p,false));
-    if(sel && filt.has(sel.sat)) drawPass(gSel,sel,true);
+    PASSES.filter(p=>p!==sel && filt.has(p.sat) && p.L>now() && (showAll||(mineOnly&&p.armed))).forEach(p=>drawPass(gOther,p,false));
+    gCmp.selectAll("*").remove();
+    const C=PASSES.filter(p=>cmp.has(p.id));
+    C.forEach(p=>{ const c=COL[p.sat];
+      gCmp.append("path").datum(p.swath).attr("d",path).attr("fill",c).attr("fill-opacity",.32).style("mix-blend-mode","screen")
+        .attr("stroke",c).attr("stroke-width",1.2).attr("stroke-dasharray",p.day?null:"3 3");
+      gCmp.append("path").datum(line(p.center)).attr("d",path).attr("fill","none").attr("stroke",c).attr("stroke-width",2.2);
+      const m=p.center[Math.floor(p.center.length*0.15)];
+      if(visible(m)){ const xy=proj(m); gCmp.append("text").attr("x",xy[0]+6).attr("y",xy[1]).text(`${short(p.sat)} ${fmtT(p.A)}`)
+        .attr("fill","#fff").attr("font-size",11).attr("font-weight",700).attr("paint-order","stroke").attr("stroke","#070b14").attr("stroke-width",3); } });
+    if(sel && filt.has(sel.sat) && !C.length) drawPass(gSel,sel,true);
     const H0=[obs.lon,obs.lat];
     if(visible(H0)){ const h=proj(H0);
       gHome.append("circle").attr("cx",h[0]).attr("cy",h[1]).attr("r",9).attr("fill","none").attr("stroke","#ff5c7a").attr("opacity",.5);
@@ -183,31 +192,103 @@ ET.start = function(cfg){
   function spinTo(ll){ stopAnim(); const from=proj.rotate(), to=[-ll[0],-ll[1],0]; let d=to[0]-from[0]; d=((d+540)%360)-180; to[0]=from[0]+d;
     const it=d3.interpolate(from,to); anim=d3.timer(el=>{const k=Math.min(1,el/900);proj.rotate(it(d3.easeCubicInOut(k)));draw();if(k>=1)stopAnim();}); }
 
+  function toast(t,bad){ let el=$("etToast"); if(!el){ el=document.createElement("div"); el.id="etToast"; document.body.appendChild(el); }
+    el.textContent=t; el.className=bad?"bad show":"show"; clearTimeout(el._t); el._t=setTimeout(()=>el.className=el.className.replace("show",""),4200); }
+  function updateMine(){ const c=$("etMine"); if(!c) return; const n=PASSES.filter(p=>p.armed&&p.L>now()).length;
+    c.hidden=!cfg.mark; c.textContent=`🎯 My trips (${n})`; c.classList.toggle("on",mineOnly); }
+  if($("etMine")) $("etMine").onclick=()=>{ mineOnly=!mineOnly; updateMine(); renderCards(); };
+  function overlapKm2(C){
+    // grid sample (0.5°) over the strips' bounds: ground seen by 2 or more of the compared passes
+    let [[x0,y0],[x1,y1]]=d3.geoBounds({type:"FeatureCollection",features:C.map(p=>({type:"Feature",geometry:p.swath}))});
+    if(x1<x0) x1+=360; let both=0, any=0;
+    for(let la=Math.floor(y0);la<=y1;la+=.5){ const cell=(55.5*111.3)*Math.cos(la*deg)*.5*2;
+      for(let lo=x0;lo<=x1;lo+=.5){ const pt=[((lo+540)%360)-180,la]; let n=0; for(const p of C) if(d3.geoContains(p.swath,pt)) n++;
+        if(n>0) any+=cell*0.5; if(n>1) both+=cell*0.5; } }
+    return {both,any};
+  }
+  function compareChanged(){
+    const C=PASSES.filter(p=>cmp.has(p.id)); const b=$("etCmp");
+    if(b){ b.hidden=!C.length; b.textContent=`✕ Clear compare (${C.length})`; }
+    if(C.length>=2){
+      const o=overlapKm2(C), pct=o.any?Math.round(100*o.both/o.any):0;
+      const mids=C.map(p=>p.center[Math.floor(p.center.length/2)]);
+      const cx=d3.geoCentroid({type:"MultiPoint",coordinates:mids}); spinTo(cx);
+      $("etInfo").innerHTML=`<b>Comparing ${C.length} passes</b> · ${C.map(p=>`<span style="color:${COL[p.sat]}">${short(p.sat)} ${new Date(p.A).toLocaleDateString('en-GB',{...TZ,weekday:'short',day:'numeric'})} ${fmtT(p.A)}</span>`).join(", ")}<br>
+        Together they cover about <b>${(o.any/1e6).toFixed(1)} million km²</b>. About <b>${(o.both/1e6).toFixed(1)} million km²</b> (${pct}%) is seen by two or more of them: that's where the strips glow brighter on the globe.
+        ${pct<10?"They hardly overlap, so together they'd add new ground to the Big Picture map.":pct>60?"They mostly overlap, good for a before/after of the same area.":"A good mix: some shared ground to compare, some new."}`;
+    } else if(sel) info(sel);
+    renderCards(); draw();
+  }
+  if($("etCmp")) $("etCmp").onclick=()=>{ cmp.clear(); compareChanged(); };
+  /* small footprint map for each pass card */
+  const LITE = window.ET_WORLD_LITE || ET_WORLD;
+  const liteLand = topojson.feature(LITE, LITE.objects.countries);
+  function crosses(p){
+    if(p.over) return p.over;
+    const names=[]; const pts=p.center.filter((_,i)=>i%3===0).concat([p.center[p.center.length-1]]);
+    pts.forEach(pt=>{ const f=liteLand.features.find(c=>d3.geoContains(c,pt)); const n=f&&f.properties&&f.properties.name;
+      if(n && names[names.length-1]!==n) names.push(n); });
+    const tidy=n=>({"United Arab Emirates":"UAE","Saudi Arabia":"Saudi","Russian Federation":"Russia"}[n]||n);
+    const u=[]; names.map(tidy).forEach(n=>{ if(!u.includes(n)) u.push(n); });
+    p.over = u.length ? (u.length>4? u.slice(0,2).concat("…",u.slice(-1)) : u).join(" → ") : "Open sea";
+    return p.over;
+  }
+  function thumb(p){
+    if(p.thumb) return p.thumb;
+    const S=78, c=COL[p.sat];
+    const mid=p.center[Math.floor(p.center.length/2)];
+    const pr=d3.geoOrthographic().rotate([-mid[0],-mid[1]]).clipAngle(90);
+    pr.scale(S*0.95).translate([S/2,S/2]);   // fixed zoom (~6,000 km across) so the region is recognisable
+    const g=d3.geoPath(pr), r=pr.scale(), id="etc"+p.id;
+    const home=pr([obs.lon,obs.lat]), homeVis=d3.geoDistance([obs.lon,obs.lat],mid)<Math.PI/2;
+    p.thumb=`<svg class="etThumb" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}" aria-hidden="true">
+      <defs><clipPath id="${id}"><rect x="0" y="0" width="${S}" height="${S}" rx="9"/></clipPath></defs>
+      <g clip-path="url(#${id})">
+        <rect width="${S}" height="${S}" fill="#0a1a30"/>
+        <path d="${g(d3.geoGraticule10())}" fill="none" stroke="#18304f" stroke-width=".5"/>
+        <path d="${g(liteLand)}" fill="#2a3d33" stroke="#4b6656" stroke-width=".4"/>
+        <path d="${g(p.swath)}" fill="${c}" fill-opacity="${p.day?.38:.2}" stroke="${c}" stroke-width=".9" ${p.day?'':'stroke-dasharray="2 2"'}/>
+        <path d="${g({type:"LineString",coordinates:p.center})}" fill="none" stroke="${c}" stroke-width="1.6"/>
+        ${homeVis&&home?`<circle cx="${home[0].toFixed(1)}" cy="${home[1].toFixed(1)}" r="2.6" fill="#ff5c7a" stroke="#fff" stroke-width=".8"/>`:''}
+      </g></svg>`;
+    return p.thumb;
+  }
+
   /* list */
   function renderCards(){
     const box=$("etCards"); box.innerHTML=""; let lastDay="";
-    const list=PASSES.filter(p=>filt.has(p.sat) && p.L>now()-30*60e3);
+    const list=PASSES.filter(p=>filt.has(p.sat) && p.L>now()-30*60e3 && (!mineOnly||p.armed));
+    if(!list.length && mineOnly){ box.innerHTML=`<div class="etEmpty">No passes marked yet. What to do: tap <b>Go out</b> on a pass you want to catch.</div>`; return; }
     if(!list.length){ box.innerHTML=`<div class="etEmpty">No passes found in the next ${cfg.hours||36} hours. What to do: check the orbit data is fresh (see the note below), then reload.</div>`; return; }
     list.forEach(p=>{
       const d=fmtD(p.A); if(d!==lastDay){lastDay=d; box.insertAdjacentHTML("beforeend",`<div class="etDay">${d}</div>`);}
       const t=now(), done=p.L<t, live=p.A<=t&&t<=p.L;
       const until= live?`<b class="etLive">Happening now · ${human(mins(p.L-t))} left</b>`: done?"Just passed":`Starts in ${human(mins(p.A-t))}`;
       const el=document.createElement("div");
-      el.className="etCard"+(sel===p?" sel":"")+(done?" done":"");
+      el.className="etCard"+(sel===p?" sel":"")+(done?" done":"")+(p.armed?" armed":"")+(cmp.has(p.id)?" cmp":"");
       el.style.setProperty("--c",COL[p.sat]);
       const plan = p.would ? `<span class="etTag ${p.would==='skip'?'':'etPlan'}" title="${(p.why||'').replace(/"/g,'&quot;')}">Catcher: ${p.would}</span>` : "";
-      el.innerHTML=`<div class="etT1"><span class="etSat">${short(p.sat)}</span><span class="etTime">${fmtT(p.A)} – ${fmtT(p.L)}</span></div>
+      el.innerHTML=`<div class="etRow">${cfg.thumbs===false?'':thumb(p)}<div class="etBody"><div class="etT1"><span class="etSat">${short(p.sat)}</span><span class="etTime">${fmtT(p.A)} – ${fmtT(p.L)}</span></div>
         <div class="etMeta">${p.day?'<span class="etTag etSun">☀ Daylight · colour</span>':'<span class="etTag etMoon">☾ Night · infrared</span>'}
         <span class="etTag">${Math.round(p.maxel)}° high</span><span class="etTag">${p.dur} min</span>
         <span class="etTag">${p.dir==="northbound"?"↑ going north":"↓ going south"}</span>
         ${p.day&&p.maxel>=30?'<span class="etTag etBest">★ Best pick</span>':''}${plan}</div>
+        <div class="etOver">📍 ${crosses(p)}</div>
         <div class="etWhen">${until}${p.side?` · passes to the ${p.side} of you`:''}</div>
-        <div class="etBar"><div style="width:${Math.min(100,p.maxel/90*100)}%"></div></div>`;
+        <div class="etBar"><div style="width:${Math.min(100,p.maxel/90*100)}%"></div></div>
+        <div class="etBtns">${cfg.mark&&!done?`<button type="button" class="etGo${p.armed?' on':''}" aria-pressed="${p.armed}">${p.armed?'✓ Going out':'🎯 Go out'}</button>`:''}<button type="button" class="etCmpB${cmp.has(p.id)?' on':''}" aria-pressed="${cmp.has(p.id)}">${cmp.has(p.id)?'☑ Comparing':'☐ Compare'}</button></div></div></div>`;
       el.onclick=()=>{followLive=false;select(p,true);};
+      el.querySelector(".etCmpB").onclick=e=>{ e.stopPropagation(); if(cmp.has(p.id)) cmp.delete(p.id); else cmp.add(p.id); compareChanged(); };
+      const gb=el.querySelector(".etGo");
+      if(gb) gb.onclick=async e=>{ e.stopPropagation(); gb.disabled=true; gb.textContent=p.armed?"Unmarking…":"Marking…";
+        try{ const r=await cfg.mark(p,!p.armed); p.armed = r===undefined? !p.armed : !!r; toast(p.armed?`Marked: ${short(p.sat)} ${fmtD(p.A)} ${fmtT(p.A)}. ${cfg.markNote||""}`:"Unmarked. It goes back to what trip mode says."); }
+        catch(err){ toast("Couldn't save that. What to do: check you're connected to the station, then tap again.",true); }
+        renderCards(); updateMine(); };
       box.appendChild(el);
     });
   }
   function info(p){
+    if(cmp.size>=2) return;
     const ns=p.dir==="northbound";
     $("etInfo").innerHTML=`<b style="color:${COL[p.sat]}">${NAME[p.sat]}</b> · ${fmtD(p.A)}, ${fmtT(p.A)} to ${fmtT(p.L)} (${p.dur} min).<br>
       It comes in from the ${ns?"south":"north"} and leaves to the ${ns?"north":"south"}, about ${Math.round(p.maxel)}° above your horizon at its highest${p.side?`, off to your ${p.side}`:''}.<br>
@@ -253,14 +334,14 @@ ET.start = function(cfg){
     sats = parseTLE(tleText);
     if(cfg.getPlan){ try{ planned = await cfg.getPlan(); }catch(e){ planned=null; } }
     if(cfg.getObs){ try{ const o=await cfg.getObs(); if(o&&isFinite(o.lat)) obs=o; }catch(e){} }
-    const list=[];
+    let pid=0; const list=[];
     if(planned && planned.length){
       planned.forEach(q=>{ const s=sats[q.sat]; if(!s) return; if(q.set*1000 < t-30*60e3) return;
-        list.push(buildPass(q.sat,s.rec,q.rise*1000,q.set*1000,obs,{maxel:q.max_el,would:q.would,why:q.why})); });
+        list.push(buildPass(q.sat,s.rec,q.rise*1000,q.set*1000,obs,{maxel:q.max_el,would:q.would,why:q.why,armed:!!q.armed,riseS:q.rise})); });
     } else {
       Object.entries(sats).forEach(([id,s])=>findPasses(s.rec,t-20*60e3,t+(cfg.hours||36)*3600e3,obs,mask).forEach(q=>list.push(buildPass(id,s.rec,q.rise,q.stop,obs))));
     }
-    list.sort((a,b)=>a.A-b.A); PASSES=list;
+    list.sort((a,b)=>a.A-b.A); list.forEach(p=>p.id=pid++); if(cfg.marked) list.forEach(p=>{ if(cfg.marked(p)) p.armed=true; }); PASSES=list; updateMine();
     const ep = Object.entries(sats).map(([id,s])=>{ const y=+s.epoch.slice(0,2), doy=+s.epoch.slice(2); const ms=Date.UTC(2000+y,0,1)+(doy-1)*864e5; return `${short(id)} ${new Date(ms).toLocaleDateString("en-GB",{...TZ,day:"numeric",month:"short"})}`; });
     const age = Math.max(...Object.values(sats).map(s=>{const y=+s.epoch.slice(0,2),doy=+s.epoch.slice(2);return (t-(Date.UTC(2000+y,0,1)+(doy-1)*864e5))/864e5;}));
     $("etSrc").innerHTML = (Object.keys(sats).length? `Orbit data: ${ep.join(", ")}${planned&&planned.length?" · passes from the catcher's own plan (with your sky mask)":` · passes counted from ${mask}° up`}.` : "No orbit data. What to do: check the station has internet, then reload.")

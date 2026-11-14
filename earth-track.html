@@ -89,7 +89,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
   <div class="inner">
     <div class="eyebrow">Meteor-M2 3 + Meteor-M2 4 · live from orbit data</div>
     <h1>Earth <span>Track</span></h1>
-    <p class="lede">Where the satellites will take their pictures next. For every upcoming pass over Dubai, the coloured strip is the patch of Earth the satellite photographs while our antenna can hear it. The grey line is the same orbit before and after, out of reach. Spin the globe, tap a pass, press play.</p>
+    <p class="lede">Where the satellites will take their pictures next. For every upcoming pass over Dubai, the coloured strip is the patch of Earth the satellite photographs while our antenna can hear it. The grey line is the same orbit before and after, out of reach. Spin the globe, tap a pass, press play. Tick Compare on two or more passes to see where their pictures overlap.</p>
   </div>
 </header>
 
@@ -97,7 +97,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
   <div class="inner">
 <style>
 .etWrap,.etWrap *{box-sizing:border-box}
-.etWrap{display:grid;grid-template-columns:1fr 340px;gap:0;border:1px solid var(--etLine);border-radius:var(--etRad,14px);overflow:hidden;background:var(--etPanel)}
+.etWrap{display:grid;grid-template-columns:1fr 400px;gap:0;border:1px solid var(--etLine);border-radius:var(--etRad,14px);overflow:hidden;background:var(--etPanel)}
 .etGlobeWrap{position:relative;min-height:600px;height:var(--etGlobeH,calc(100vh - 160px));background:var(--etSpace,#070b14)}
 #etGlobe{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 #etGlobe:active{cursor:grabbing}
@@ -121,6 +121,24 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
 .etCard:hover{border-color:#44557a}
 .etCard.sel{border-color:var(--c);box-shadow:0 0 0 1px var(--c) inset}
 .etCard.done{opacity:.45}
+.etRow{display:flex;gap:11px;align-items:flex-start}
+.etBody{flex:1;min-width:0}
+.etThumb{flex:none;border-radius:9px;border:1px solid var(--etLine);display:block}
+.etCard.sel .etThumb{border-color:var(--c)}
+.etCard.armed{background:linear-gradient(90deg,rgba(127,240,182,.10),transparent 60%),var(--etCard);border-color:#3f8f68}
+.etCard.armed.sel{border-color:var(--c)}
+.etBtns{display:flex;gap:6px;margin-top:9px}
+.etGo,.etCmpB{flex:1;min-height:36px;border-radius:9px;border:1px dashed #3f8f68;background:transparent;color:#9ff0c8;font:600 12.5px var(--etMono);cursor:pointer}
+.etCmpB{min-height:36px;border-radius:9px;border:1px dashed #44557a;background:transparent;color:#b9c4d8;font:600 12.5px var(--etMono);cursor:pointer}
+.etCmpB.on{border-style:solid;background:#1a2540;color:#fff;border-color:#8aa0d0}
+.etCard.cmp{box-shadow:0 0 0 1px #8aa0d0 inset}
+.etGo:hover{background:rgba(127,240,182,.08)}
+.etGo.on{border-style:solid;background:#123a2a;color:#7ff0b6}
+.etGo:disabled{opacity:.6;cursor:progress}
+#etToast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;background:#123a2a;color:#d9ffe9;border:1px solid #3f8f68;padding:10px 16px;border-radius:10px;font-size:13.5px;z-index:50;transition:all .25s;max-width:90vw;pointer-events:none}
+#etToast.show{opacity:1;transform:translate(-50%,0)}
+#etToast.bad{background:#3a1616;border-color:#8f3f3f;color:#ffdada}
+.etOver{font-size:12px;color:#d6deea;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .etT1{display:flex;align-items:center;justify-content:space-between}
 .etSat{font-weight:700;color:var(--c);font-family:var(--etMono)}
 .etTime{font:600 13px var(--etMono)}
@@ -151,6 +169,8 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
     <div class="etTools">
       <span class="etChip on" data-f="M2-3"><span class="dot" style="background:var(--etM3)"></span>N2-3</span>
       <span class="etChip on" data-f="M2-4"><span class="dot" style="background:var(--etM4)"></span>N2-4</span>
+      <span class="etChip" id="etMine" hidden>🎯 My trips (0)</span>
+      <span class="etChip on" id="etCmp" hidden>✕ Clear compare</span>
       <span class="etChip" id="etAll">Show all passes</span>
       <span class="etChip" id="etHome">Centre on Dubai</span>
     </div>
@@ -189,6 +209,7 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
 <script src="/earth/d3.min.js"></script>
 <script src="/earth/topojson-client.min.js"></script>
 <script src="/earth/world-50m.js"></script>
+<script src="/earth/world-110m.js"></script>
 <script src="/earth/satellite.min.js"></script>
 <script src="/earth/engine.js"></script>
 <script>
