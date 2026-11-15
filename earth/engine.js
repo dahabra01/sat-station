@@ -49,6 +49,10 @@ function findPasses(rec,from,to,obs,mask){
   }
   return out;
 }
+const COMPASS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const compass=a=>COMPASS[Math.round(((a%360)+360)%360/22.5)%16];
+const mmss=sec=>{ sec=Math.round(sec); const m=Math.floor(sec/60), s=sec%60; return m? `${m} min${s?` ${s} s`:''}` : `${s} s`; };
+const rateU=u=>u>=120?["Good","good"]:u>=40?["Fair","fair"]:["Poor","poor"];   // same thresholds as Sky & passes
 function subsolar(t){
   const d=new Date(t), n=(t-Date.UTC(d.getUTCFullYear(),0,1))/864e5;
   const decl=-23.44*Math.cos(2*Math.PI/365*(n+10)), hrs=d.getUTCHours()+d.getUTCMinutes()/60;
@@ -86,6 +90,8 @@ function buildPass(id,rec,rise,stop,obs,extra){
   // max elevation, side, direction, daylight
   let best={el:-90,t:rise}; for(let t=rise;t<=stop;t+=15e3){ const l=look(rec,t,obs); if(l&&l.el>best.el) best={el:l.el,t,az:l.az}; }
   if(p.maxel==null) p.maxel = +best.el.toFixed(1);
+  p.pts=[]; for(let t=rise;t<=stop;t+=10e3){ const l=look(rec,t,obs); if(l) p.pts.push(l); }
+  if(p.pts.length){ const top=p.pts.reduce((a,b)=>b.el>a.el?b:a); p.geo={rise:p.pts[0].az, top, set:p.pts[p.pts.length-1].az}; }
   p.side = best.az!=null ? (best.az<180?"east":"west") : (p.side||"");
   p.dir = c[c.length-1][1] > c[0][1] ? "northbound" : "southbound";
   p.day = sunEl((rise+stop)/2, c[Math.floor(c.length/2)]) > 5;
@@ -97,7 +103,7 @@ ET.start = function(cfg){
   const COL = cfg.colors || {"M2-3":"#5ee1e6","M2-4":"#e8b45c"};
   const NAME = {"M2-3":"Meteor-M N2-3","M2-4":"Meteor-M N2-4"};
   const short = s => s.replace("M2-","N2-");
-  let autoCmp=false, mineOnly=false, dayF={day:true,night:true}, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, minPeak = cfg.minPeak||15, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
+  let setups=null, autoCmp=false, mineOnly=false, dayF={day:true,night:true}, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, minPeak = cfg.minPeak||15, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
   const now = () => Date.now();
 
   // hearing circle radius on the ground for the mask elevation (satellite ~830 km up)
@@ -220,6 +226,32 @@ ET.start = function(cfg){
     renderCards(); draw();
   }
   if($("etCmp")) $("etCmp").onclick=()=>{ cmp.clear(); autoCmp=false; compareChanged(); };
+  /* Sky & passes' numbers for a pass: useful recording (above 30°, not blocked), outlook, field hours */
+  function skyStats(p){
+    if(p.sky) return p.sky;
+    const site = cfg.site ? cfg.site(obs) : null;
+    const mask = site&&site.mask ? site.mask : {skyline:0,rows:[]};
+    const AZ = window.AZSITES;
+    const maskAt = az => AZ ? AZ.maskAt(mask,az) : 0;
+    let clear=0, useful=0, openUseful=0;
+    (p.pts||[]).forEach(q=>{ const c=q.el>maskAt(q.az)&&q.el>0; if(q.el>=30) openUseful+=10; if(c){ clear+=10; if(q.el>=30) useful+=10; } });
+    const [h,m]=fmtT(p.A).split(":").map(Number), hr=h+m/60;
+    const field = !!site && !site.field && hr>=9 && hr<21;           // field hours: rated for an open site
+    const open = !site;                                              // public page: no sky map, open sky
+    const u = (field||open) ? openUseful : useful;
+    const [o,oc]=rateU(u);
+    p.sky={useful:u, clear, outlook: o+(field?" · field":open?" · open sky":""), oc, field};
+    return p.sky;
+  }
+  function skyLine(p){
+    const k=skyStats(p), g=p.geo, set=setups&&setups[p.sat];
+    const w=Math.min(100,k.useful/240*100).toFixed(0);
+    let h=`<div class="etSky"><span class="etOut ${k.oc}">${k.outlook}</span><span class="etUse"><span class="etUb"><i class="${k.oc}" style="width:${w}%"></i></span>${k.useful?mmss(k.useful)+" useful recording":"no useful recording"}</span></div>`;
+    if(g) h+=`<div class="etGeo">Rises ${compass(g.rise)} · top ${Math.round(g.top.el)}° at ${compass(g.top.az)} · sets ${compass(g.set)}</div>`;
+    if(set) h+=`<div class="etGeo">Setup: bias ${set.bias==null?"—":set.bias?'<b class="on">On</b>':'<b class="off">Off</b>'} · gain ${set.gain==null?"—":(+set.gain).toFixed(1)} · ${set.mode||"—"}</div>`;
+    return h;
+  }
+
   /* day / night filter */
   function syncDN(){ const d=$("etDayF"), n=$("etNightF"); if(d) d.classList.toggle("on",dayF.day); if(n) n.classList.toggle("on",dayF.night); }
   if($("etDayF")) $("etDayF").onclick=()=>{ if(dayF.day&&!dayF.night) return; dayF.day=!dayF.day; syncDN(); renderCards(); draw(); };
@@ -313,6 +345,7 @@ ET.start = function(cfg){
         <span class="etTag">${Math.round(p.maxel)}° high</span><span class="etTag">${p.dur} min</span>
         <span class="etTag">${p.dir==="northbound"?"↑ going north":"↓ going south"}</span>
         ${p.day&&p.maxel>=30?'<span class="etTag etBest">★ Best pick</span>':''}${p.maxel<minPeak?`<span class="etTag etLow" title="Sky & passes doesn't list it">⚠ Too low to catch · armed</span>`:''}${plan}</div>
+        ${skyLine(p)}
         <div class="etOver">📍 ${crosses(p)}</div>
         <div class="etWhen">${until}${p.side?` · passes to the ${p.side} of you`:''}</div>
         <div class="etBar"><div style="width:${Math.min(100,p.maxel/90*100)}%"></div></div>
@@ -378,6 +411,7 @@ ET.start = function(cfg){
     sats = parseTLE(tleText);
     if(cfg.getPlan){ try{ planned = await cfg.getPlan(); }catch(e){ planned=null; } }
     if(cfg.getObs){ try{ const o=await cfg.getObs(); if(o&&isFinite(o.lat)) obs=o; }catch(e){} }
+    if(cfg.getSetup){ try{ setups=await cfg.getSetup(); }catch(e){ setups=null; } }
     let pid=0; const list=[];
     if(planned && planned.length){
       planned.forEach(q=>{ const s=sats[q.sat]; if(!s) return; if(q.set*1000 < t-30*60e3) return;

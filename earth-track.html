@@ -143,6 +143,14 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
 #etToast.show{opacity:1;transform:translate(-50%,0)}
 #etToast.bad{background:#3a1616;border-color:#8f3f3f;color:#ffdada}
 .etSameNote{margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--etLine);color:#d9ffe9}
+.etSky{display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap}
+.etOut{font:700 11px var(--etMono);padding:2px 7px;border-radius:6px;letter-spacing:.02em}
+.etOut.good{background:#123a2a;color:#7ff0b6}.etOut.fair{background:#3a2e10;color:#ffd77a}.etOut.poor{background:#3a1616;color:#ffb4b4}
+.etUse{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#d6deea}
+.etUb{display:inline-block;width:54px;height:6px;border-radius:3px;background:#1d273b;overflow:hidden}
+.etUb i{display:block;height:100%}.etUb i.good{background:#7ff0b6}.etUb i.fair{background:#ffd77a}.etUb i.poor{background:#ff8f8f}
+.etGeo{font-size:11.5px;color:var(--etMute);margin-top:4px}
+.etGeo b.on{color:#7ff0b6}.etGeo b.off{color:#e07a52}
 .etOver{font-size:12px;color:#d6deea;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .etT1{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px 8px}
 .etT1>span{white-space:nowrap}
@@ -219,9 +227,9 @@ footer .inner{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px
 <script src="/earth/d3.min.js"></script>
 <script src="/earth/topojson-client.min.js"></script>
 <script src="/earth/world-50m.js"></script>
-<script src="/earth/world-110m.js?v=2026111601"></script>
+<script src="/earth/world-110m.js?v=2026111602"></script>
 <script src="/earth/satellite.min.js"></script>
-<script src="/earth/engine.js?v=2026111601"></script>
+<script src="/earth/engine.js?v=2026111602"></script>
 <script>
 ET.start({
   obs:{lat:25.20,lon:55.27,name:"Dubai"}, mask:10, hours:36,
