@@ -97,7 +97,7 @@ ET.start = function(cfg){
   const COL = cfg.colors || {"M2-3":"#5ee1e6","M2-4":"#e8b45c"};
   const NAME = {"M2-3":"Meteor-M N2-3","M2-4":"Meteor-M N2-4"};
   const short = s => s.replace("M2-","N2-");
-  let autoCmp=false, mineOnly=false, dayF={day:true,night:true}, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
+  let autoCmp=false, mineOnly=false, dayF={day:true,night:true}, cmp=new Set(), obs = cfg.obs, mask = cfg.mask||10, minPeak = cfg.minPeak||15, PASSES=[], sats={}, sel=null, showAll=false, filt=new Set(["M2-3","M2-4"]), scrubT=null, followLive=true;
   const now = () => Date.now();
 
   // hearing circle radius on the ground for the mask elevation (satellite ~830 km up)
@@ -242,6 +242,7 @@ ET.start = function(cfg){
           const c=[]; for(let t=q.rise;t<=q.stop;t+=20e3){ const x=sub(st.rec,t); if(x) c.push(x); }
           if(c.length<2) continue;
           const dir=c[c.length-1][1]>c[0][1]?"northbound":"southbound"; if(dir!==ndir) continue;
+          let pk=-90; for(let t=q.rise;t<=q.stop;t+=30e3){ const l=look(st.rec,t,obs); if(l&&l.el>pk) pk=l.el; } if(pk<minPeak) continue;
           const day=sunEl((q.rise+q.stop)/2,c[Math.floor(c.length/2)])>5; if(!(day?dayF.day:dayF.night)) continue;
           const d=lonDiff(crossLon(c),bl);
           if(!closest||d<closest.d) closest={id,st,q,d};
@@ -311,7 +312,7 @@ ET.start = function(cfg){
         <div class="etMeta">${p.day?'<span class="etTag etSun">☀ Daylight · colour</span>':'<span class="etTag etMoon">☾ Night · infrared</span>'}
         <span class="etTag">${Math.round(p.maxel)}° high</span><span class="etTag">${p.dur} min</span>
         <span class="etTag">${p.dir==="northbound"?"↑ going north":"↓ going south"}</span>
-        ${p.day&&p.maxel>=30?'<span class="etTag etBest">★ Best pick</span>':''}${plan}</div>
+        ${p.day&&p.maxel>=30?'<span class="etTag etBest">★ Best pick</span>':''}${p.maxel<minPeak?`<span class="etTag etLow" title="Sky & passes doesn't list it">⚠ Too low to catch · armed</span>`:''}${plan}</div>
         <div class="etOver">📍 ${crosses(p)}</div>
         <div class="etWhen">${until}${p.side?` · passes to the ${p.side} of you`:''}</div>
         <div class="etBar"><div style="width:${Math.min(100,p.maxel/90*100)}%"></div></div>
@@ -335,6 +336,7 @@ ET.start = function(cfg){
       It comes in from the ${ns?"south":"north"} and leaves to the ${ns?"north":"south"}, about ${Math.round(p.maxel)}° above your horizon at its highest${p.side?`, off to your ${p.side}`:''}.<br>
       ${p.day?"The sun is up along this strip, so expect a full colour picture.":"This strip is in darkness, so expect infrared (heat) pictures only: clouds show, land detail is faint."}
       ${p.why?`<br><span style="opacity:.8">Catcher's plan: ${p.would}, ${p.why}</span>`:''}
+      ${p.maxel<minPeak?`<br><b class="etWarn">It only climbs ${Math.round(p.maxel)}°, too low to catch, but it's armed so the catcher would still record it. What to do: tap ✓ Armed to disarm it.</b>`:''}
       ${cmp.size>=2&&!cmp.has(p.id)?`<br><span style="opacity:.8">Also showing ${cmp.size} compared passes underneath. Tap ✕ Clear compare to hide them.</span>`:''}`;
   }
   function select(p,spin){
@@ -379,14 +381,15 @@ ET.start = function(cfg){
     let pid=0; const list=[];
     if(planned && planned.length){
       planned.forEach(q=>{ const s=sats[q.sat]; if(!s) return; if(q.set*1000 < t-30*60e3) return;
+        if((q.max_el||0) < minPeak && !q.armed) return;   // same rule as Sky & passes: a pass must climb 15°
         list.push(buildPass(q.sat,s.rec,q.rise*1000,q.set*1000,obs,{maxel:q.max_el,would:q.would,why:q.why,armed:!!q.armed,riseS:q.rise})); });
     } else {
-      Object.entries(sats).forEach(([id,s])=>findPasses(s.rec,t-20*60e3,t+(cfg.hours||36)*3600e3,obs,mask).forEach(q=>list.push(buildPass(id,s.rec,q.rise,q.stop,obs))));
+      Object.entries(sats).forEach(([id,s])=>findPasses(s.rec,t-20*60e3,t+(cfg.hours||36)*3600e3,obs,mask).forEach(q=>{ const p=buildPass(id,s.rec,q.rise,q.stop,obs); if(p.maxel>=minPeak) list.push(p); }));
     }
     list.sort((a,b)=>a.A-b.A); list.forEach(p=>p.id=pid++); if(cfg.marked) list.forEach(p=>{ if(cfg.marked(p)) p.armed=true; }); PASSES=list; updateMine();
     const ep = Object.entries(sats).map(([id,s])=>{ const y=+s.epoch.slice(0,2), doy=+s.epoch.slice(2); const ms=Date.UTC(2000+y,0,1)+(doy-1)*864e5; return `${short(id)} ${new Date(ms).toLocaleDateString("en-GB",{...TZ,day:"numeric",month:"short"})}`; });
     const age = Math.max(...Object.values(sats).map(s=>{const y=+s.epoch.slice(0,2),doy=+s.epoch.slice(2);return (t-(Date.UTC(2000+y,0,1)+(doy-1)*864e5))/864e5;}));
-    $("etSrc").innerHTML = (Object.keys(sats).length? `Orbit data: ${ep.join(", ")}${planned&&planned.length?" · passes from the catcher's own plan (with your sky mask)":` · passes counted from ${mask}° up`}.` : "No orbit data. What to do: check the station has internet, then reload.")
+    $("etSrc").innerHTML = (Object.keys(sats).length? `Orbit data: ${ep.join(", ")}${planned&&planned.length?" · passes from the catcher's own plan (with your sky mask)":` · passes counted from ${mask}° up`}. Only passes that climb at least ${minPeak}° are listed, the same as Sky & passes.` : "No orbit data. What to do: check the station has internet, then reload.")
       + (age>4? ` <b class="etWarn">Orbit data is ${Math.round(age)} days old, so times may drift. What to do: ${cfg.staleFix||"reload later"}.</b>`:"");
     if($("etWhere")) $("etWhere").textContent = obs.name || "";
     // keep the selection if it's still there, else follow the live/next pass
